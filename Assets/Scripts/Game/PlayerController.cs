@@ -11,9 +11,6 @@ public class PlayerController : MonoBehaviour {
     public float maxSpeed;
 
     public float pushForce;
-    public LayerMask pushMask; //for pushing things, like an animal, etc
-    public LayerMask pushByMask; //for platforms, or things that push the play
-
     public float pushedDelay;
 
     private Player mPlayer;
@@ -118,10 +115,24 @@ public class PlayerController : MonoBehaviour {
                 vel += mMoves[i];
             mNumMoves = 0;
         }
-
+                
         curVel = vel;
 
-        mCharCtrl.Move(curVel * dt);
+        mCharCtrl.Move(vel * dt);
+
+        bool updateVel = false;
+
+        if(mCharCtrl.isGrounded && vel.y < 0.0f) {
+            vel.y = 0.0f;
+            updateVel = true;
+        }
+        else if((mCharCtrl.collisionFlags & CollisionFlags.Above) != 0 && vel.y > 0.0f) {
+            vel.y = 0.0f;
+            updateVel = true;
+        }
+
+        if(updateVel)
+            curVel = vel;
     }
 
     void FixedUpdate() {
@@ -132,27 +143,31 @@ public class PlayerController : MonoBehaviour {
     void OnControllerColliderHit(ControllerColliderHit hit) {
         Rigidbody hitbody = hit.collider.rigidbody;
         GameObject hitGO = hit.collider.gameObject;
-
+        
         if(hitbody != null) {
-            if(((1 << hitGO.layer) & pushByMask.value) != 0) {
-                //push player
-                Vector2 vel = hitbody.GetPointVelocity(hit.point);
-                if(vel != Vector2.zero)
-                    AddMove(vel);
-            }
+            PlayerCollisionBase collideInteract = hitGO.GetComponent<PlayerCollisionBase>();
 
-            if(!hitbody.isKinematic) {
-                //push hit object
-                if(((1 << hitGO.layer) & pushMask.value) != 0) {
+            if(collideInteract != null) {
+                CollisionFlags flags = GetCollisionFlagsFromHit(hit);
+
+                if(collideInteract.pushBackFlags != CollisionFlags.None && (collideInteract.pushBackFlags & flags) != 0) {
+                    //push player
+                    Vector2 vel = hitbody.GetPointVelocity(hit.point);
+
+                    if(vel != Vector2.zero) {
+                        AddMove(vel);
+                    }
+                }
+
+                if(!hitbody.isKinematic && collideInteract.pushFlags != CollisionFlags.None && (collideInteract.pushBackFlags & flags) != 0) {
+                    //push hit object
                     hitbody.AddForceAtPosition(hit.moveDirection * pushForce, hit.point);
                 }
-            }
-        }
 
-        //custom collision
-        PlayerCollisionBase collideInteract = hitGO.GetComponent<PlayerCollisionBase>();
-        if(collideInteract != null)
-            collideInteract.PlayerCollide(this, hit);
+                //custom collision
+                collideInteract.PlayerCollide(this, flags, hit);
+            }
+        }   
     }
 
 
@@ -168,4 +183,24 @@ public class PlayerController : MonoBehaviour {
 
     #endregion
 
+    private CollisionFlags GetCollisionFlagsFromHit(ControllerColliderHit hit) {
+        CollisionFlags ret = CollisionFlags.None;
+
+        Vector2 pos = transform.position;
+        pos.x += mCharCtrl.center.x;
+        pos.y += mCharCtrl.center.y;
+
+        float hExt = mCharCtrl.height * 0.5f - mCharCtrl.radius;
+
+        if(pos.y + hExt < hit.point.y)
+            ret = CollisionFlags.Above;
+        else if(pos.y - hExt > hit.point.y)
+            ret = CollisionFlags.Below;
+        else
+            ret = CollisionFlags.Sides;
+
+        //if(
+
+        return ret;
+    }
 }
