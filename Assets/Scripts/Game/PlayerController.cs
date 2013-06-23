@@ -92,11 +92,18 @@ public class PlayerController : MonoBehaviour {
     void Update() {
         float dt = Time.deltaTime;
 
+        float inputXVel = 0.0f;
+
         if(mInputEnabled) {
             InputManager input = Main.instance.input;
 
             mInputAxis.x = input.GetAxis(0, InputAction.DirX);
             mInputAxis.y = input.GetAxis(0, InputAction.DirY);
+
+            //compute input velocity
+            if(Mathf.Abs(mInputAxis.x) > float.Epsilon) {
+                inputXVel = mInputAxis.x * moveSpeed;
+            }
         }
         else {
             mInputAxis = Vector2.zero;
@@ -107,15 +114,21 @@ public class PlayerController : MonoBehaviour {
         vel.x = mInputAxis.x * moveSpeed;
 
         vel.y -= gravity * dt;
-
-        //animation update
-
+                
         if(mNumMoves > 0) {
             for(int i = 0; i < mNumMoves; i++)
                 vel += mMoves[i];
             mNumMoves = 0;
         }
-                
+
+        //add input move, cancel x velocity if input moving opposite direction
+        if(inputXVel != 0.0f) {
+            if(Mathf.Sign(inputXVel) != Mathf.Sign(vel.x))
+                vel.x = inputXVel;
+            else
+                vel.x += inputXVel;
+        }
+                                
         curVel = vel;
 
         mCharCtrl.Move(vel * dt);
