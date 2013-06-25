@@ -10,6 +10,13 @@ public class Player : EntityBase {
     private HUD mHUD;
 
     private Dictionary<string, List<Animal>> mSummons; //tracking summoned animals
+    private int mSummonCurSelect = -1;
+
+    public FollowCamera followCamera { get { return mFollowCamera; } }
+
+    public int summonCurSelect { get { return mSummonCurSelect; } }
+
+    public int summonCount { get { return LevelInfo.instance.summonItems.Length; } }
 
     public int SummonGetAvailableCount(int ind) {
         LevelInfo level = LevelInfo.instance;
@@ -36,25 +43,48 @@ public class Player : EntityBase {
         return level.GetSummonItem(type).max - animals.Count;
     }
 
+    /// <summary>
+    /// set ind = -1 to unselect
+    /// </summary>
     public void SummonSetSelect(int ind) {
-        LevelInfo level = LevelInfo.instance;
-        LevelInfo.SummonItem summonItem = level.summonItems[ind];
+        if(mSummonCurSelect != ind) {
+            if(mSummonCurSelect != -1) {
+                mHUD.SetSummonSelect(mSummonCurSelect, false);
+            }
 
-        AnimalSummon.instance.Select(summonItem.type, mFollowCamera.focus);
+            mSummonCurSelect = ind;
+
+            if(mSummonCurSelect != -1) {
+                LevelInfo level = LevelInfo.instance;
+                LevelInfo.SummonItem summonItem = level.summonItems[ind];
+
+                AnimalSummon.instance.Select(summonItem.type, mFollowCamera.focusCursor);
+
+                mHUD.SetSummonSelect(mSummonCurSelect, true);
+            }
+            else {
+                AnimalSummon.instance.Select(null, null);
+            }
+        }
     }
 
-    public void Summon() {
-        Animal animal = AnimalSummon.instance.SummonCurrent(this, mFollowCamera.focus.position);
-        
-        List<Animal> animals = null;
-        if(!mSummons.TryGetValue(animal.spawnType, out animals)) {
-            Debug.LogError("Type not found: " + animal.spawnType);
-            return;
+    public void SummonCurrent() {
+        //can only summon if cursor is valid
+        if(AnimalSummon.instance.curCursor != null && AnimalSummon.instance.curCursor.isValid) {
+            Animal animal = AnimalSummon.instance.SummonCurrent(this, mFollowCamera.focusCursor.position);
+
+            List<Animal> animals = null;
+            if(!mSummons.TryGetValue(animal.spawnType, out animals)) {
+                Debug.LogError("Type not found: " + animal.spawnType);
+                return;
+            }
+
+            animal.releaseCallback += OnAnimalRelease;
+
+            animals.Add(animal);
+
+            mHUD.RefreshSummons(this);
         }
-
-        animal.releaseCallback += OnAnimalRelease;
-
-        animals.Add(animal);
     }
 
     protected override void OnDespawned() {
@@ -104,12 +134,13 @@ public class Player : EntityBase {
         //initialize variables from other sources (for communicating with managers, etc.)
         LevelInfo level = LevelInfo.instance;
 
+        //level bounds
+        mFollowCamera.bounds = level.bounds;
+
         //initialize summon container
         mSummons = new Dictionary<string, List<Animal>>(level.summonItems.Length);
         foreach(LevelInfo.SummonItem itm in level.summonItems)
             mSummons[itm.type] = new List<Animal>(itm.max);
-
-        mHUD.RefreshSummons(this);
     }
 
     //void LateUpdate() {

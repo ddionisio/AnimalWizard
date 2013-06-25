@@ -7,6 +7,8 @@ using System.Collections.Generic;
 public class AnimalSummon : MonoBehaviour {
     public delegate void OnSelect(AnimalSummon summon, string prevType);
 
+    public Transform cursorHolder;
+
     public event OnSelect selectCallback;
 
     private PoolController mPool;
@@ -21,7 +23,9 @@ public class AnimalSummon : MonoBehaviour {
     public string curType { get { return mCurType; } }
     public AnimalSummonCursor curCursor { get { return mCurCursor; } }
 
-    //set type to null or empty to unselect
+    /// <summary>
+    /// set type to null or empty to unselect
+    /// </summary>
     public void Select(string type, Transform attach) {
         if(mCurType != type) {
             string prevType = mCurType;
@@ -34,6 +38,8 @@ public class AnimalSummon : MonoBehaviour {
             }
 
             if(!string.IsNullOrEmpty(mCurType)) {
+                mCurCursor = mCursors[type];
+
                 mCurCursor.attach = attach;
 
                 if(!mCursors.TryGetValue(mCurType, out mCurCursor))
@@ -76,12 +82,21 @@ public class AnimalSummon : MonoBehaviour {
 
             mPool = GetComponent<PoolController>();
 
-            AnimalSummonCursor[] cursors = GetComponentsInChildren<AnimalSummonCursor>(true);
+            //cursor init
+            AnimalSummonCursor[] cursors = cursorHolder.GetComponentsInChildren<AnimalSummonCursor>(true);
             mCursors = new Dictionary<string, AnimalSummonCursor>(cursors.Length);
             foreach(AnimalSummonCursor cursor in cursors) {
                 cursor.gameObject.SetActive(false);
                 mCursors.Add(cursor.gameObject.name, cursor);
             }
+        }
+    }
+
+    void Start() {
+        //animal pool init
+        LevelInfo level = LevelInfo.instance;
+        foreach(LevelInfo.SummonItem dat in level.summonItems) {
+            mPool.Expand(dat.type, dat.max);
         }
     }
 }

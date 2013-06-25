@@ -13,6 +13,8 @@ public class PlayerController : MonoBehaviour {
     public float pushForce;
     public float pushedDelay;
 
+    public LayerMask animalLayerMask;
+
     private Player mPlayer;
     private CharacterController mCharCtrl;
 
@@ -26,6 +28,8 @@ public class PlayerController : MonoBehaviour {
     private Vector2[] mMoves = new Vector2[maxMoves];
     private int mNumMoves = 0;
 
+    private Animal mAnimalCancel;
+
     public bool inputEnabled {
         get { return mInputEnabled; }
         set {
@@ -35,10 +39,20 @@ public class PlayerController : MonoBehaviour {
                 InputManager input = Main.instance != null ? Main.instance.input : null;
                 if(input != null) {
                     if(mInputEnabled) {
+                        input.AddButtonCall(0, InputAction.Action, OnInputAction);
                         input.AddButtonCall(0, InputAction.Jump, OnInputJump);
+
+                        for(int i = InputAction.Select1; i <= InputAction.Select5; i++) {
+                            input.AddButtonCall(0, i, OnInputSummonSelect);
+                        }
                     }
                     else {
+                        input.RemoveButtonCall(0, InputAction.Action, OnInputAction);
                         input.RemoveButtonCall(0, InputAction.Jump, OnInputJump);
+
+                        for(int i = InputAction.Select1; i <= InputAction.Select5; i++) {
+                            input.RemoveButtonCall(0, i, OnInputSummonSelect);
+                        }
                     }
                 }
             }
@@ -128,10 +142,14 @@ public class PlayerController : MonoBehaviour {
             else
                 vel.x += inputXVel;
         }
-                                
-        curVel = vel;
 
-        mCharCtrl.Move(vel * dt);
+        Vector3 pos = transform.position;
+                                        
+        curVel = vel;
+        
+        Vector3 dpos = new Vector3(vel.x * dt, vel.y * dt, -pos.z);
+
+        mCharCtrl.Move(dpos);
 
         bool updateVel = false;
 
@@ -172,7 +190,7 @@ public class PlayerController : MonoBehaviour {
                     }
                 }
 
-                if(!hitbody.isKinematic && collideInteract.pushFlags != CollisionFlags.None && (collideInteract.pushBackFlags & flags) != 0) {
+                if(!hitbody.isKinematic && collideInteract.pushFlags != CollisionFlags.None && (collideInteract.pushFlags & flags) != 0) {
                     //push hit object
                     hitbody.AddForceAtPosition(hit.moveDirection * pushForce, hit.point);
                 }
@@ -186,10 +204,66 @@ public class PlayerController : MonoBehaviour {
 
     #region input
 
+    void OnInputAction(InputManager.Info dat) {
+        if(dat.state == InputManager.State.Pressed) {
+            if(mPlayer.summonCurSelect != -1) {
+                mPlayer.SummonCurrent();
+
+                //if(mPlayer.SummonGetAvailableCount(mPlayer.summonCurSelect) == 0)
+                    //mPlayer.SummonSetSelect(-1);
+                mPlayer.SummonSetSelect(-1);
+            }
+            else {
+                //cancel an animal
+                Camera cam = mPlayer.followCamera.mainCamera;
+                Ray camRay = cam.ScreenPointToRay(Input.mousePosition);
+                RaycastHit hit;
+                if(Physics.Raycast(camRay, out hit, Mathf.Infinity, animalLayerMask)) {
+                    Animal animalHit = hit.collider.GetComponent<Animal>();
+                    if(mAnimalCancel != animalHit) {
+                        if(mAnimalCancel != null)
+                            mAnimalCancel.Despawn(false);
+
+                        mAnimalCancel = animalHit;
+
+                        if(mAnimalCancel != null) {
+                            mAnimalCancel.Despawn(true);
+                        }
+                    }
+                }
+            }
+        }
+        else if(dat.state == InputManager.State.Released) {
+            //cancel animal despawn
+            if(mAnimalCancel != null) {
+                mAnimalCancel.Despawn(false);
+                mAnimalCancel = null;
+            }
+        }
+    }
+
     void OnInputJump(InputManager.Info dat) {
         if(dat.state == InputManager.State.Pressed) {
             if(mCharCtrl.isGrounded) {
                 mCurVel.y = jumpSpeed;
+            }
+        }
+    }
+
+    void OnInputSummonSelect(InputManager.Info dat) {
+        if(dat.state == InputManager.State.Pressed) {
+            if(mPlayer.summonCurSelect == dat.index || mPlayer.summonCount <= dat.index) {
+                mPlayer.SummonSetSelect(-1);
+            }
+            else if(mPlayer.SummonGetAvailableCount(dat.index) > 0) {
+                //only select if there's available count
+                mPlayer.SummonSetSelect(dat.index);
+
+                //cancel animal despawn
+                if(mAnimalCancel != null) {
+                    mAnimalCancel.Despawn(false);
+                    mAnimalCancel = null;
+                }
             }
         }
     }

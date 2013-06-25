@@ -4,7 +4,11 @@ using System.Collections;
 public class FollowCamera : MonoBehaviour {
 
     public Camera mainCamera;
-    public Transform focus;
+
+    [SerializeField]
+    Transform focus; //camera to mouse, relative to target
+
+    public Transform focusCursor; //actual cursor position
 
     public float threshold = 0.25f;
     public float focusMaxDistance = 5.0f;
@@ -85,6 +89,9 @@ public class FollowCamera : MonoBehaviour {
                 focus.position = mainCamera.ScreenToWorldPoint(Input.mousePosition);
                 mainCamera.transform.position = lastCamPos;
 
+                Vector3 mousePos = mainCamera.ScreenToWorldPoint(Input.mousePosition);
+                focusCursor.position = new Vector3(mousePos.x, mousePos.y, focusCursor.position.z);
+
                 Vector2 dFocus = focus.position - mTarget.position;
                 if(dFocus.sqrMagnitude > mFocusMaxDistanceSq) {
                     dFocus = dFocus.normalized * focusMaxDistance;
@@ -125,14 +132,6 @@ public class FollowCamera : MonoBehaviour {
 
                 mLastTargetPos = targetPos;
             }
-        }
-    }
-
-    void OnDrawGizmos() {
-        if(bounds.width > 0 && bounds.height > 0) {
-            Gizmos.color = Color.cyan;
-
-            Gizmos.DrawWireCube(new Vector3(bounds.x, bounds.y, 0.0f), new Vector3(bounds.width * 0.5f, bounds.height * 0.5f, 1.0f));
         }
     }
 

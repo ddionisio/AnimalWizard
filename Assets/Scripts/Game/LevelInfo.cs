@@ -18,6 +18,8 @@ public class LevelInfo : MonoBehaviour {
 
     public TextAsset file;
 
+    public Rect bounds;
+
     private static LevelInfo mInstance;
 
     private SummonItem[] mSummonItems;
@@ -49,6 +51,14 @@ public class LevelInfo : MonoBehaviour {
             Data fileData = fastJSON.JSON.Instance.ToObject<Data>(file.text);
 
             mSummonItems = fileData.summons;
+        }
+    }
+
+    void OnDrawGizmos() {
+        if(bounds.width > 0 && bounds.height > 0) {
+            Gizmos.color = Color.cyan;
+
+            Gizmos.DrawWireCube(new Vector3(bounds.x, bounds.y, 0.0f), new Vector3(bounds.width * 0.5f, bounds.height * 0.5f, 1.0f));
         }
     }
 }

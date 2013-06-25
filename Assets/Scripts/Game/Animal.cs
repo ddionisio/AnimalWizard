@@ -7,7 +7,11 @@ public class Animal : EntityBase {
     public const int StateNormal = 3;
     public const int StateDespawning = 4;
 
+    public const float despawnDelay = 0.5f;
+
     public delegate void OnSummonInit(Animal animal, Player player);
+
+    public GameObject despawnGO;
 
     public event OnSummonInit summonInitCallback;
 
@@ -60,6 +64,7 @@ public class Animal : EntityBase {
         base.Awake();
 
         //initialize variables
+        despawnGO.SetActive(false);
     }
 
     // Use this for initialization
@@ -67,5 +72,28 @@ public class Animal : EntityBase {
         base.Start();
 
         //initialize variables from other sources (for communicating with managers, etc.)
+    }
+
+    protected override void StateChanged() {
+        switch(prevState) {
+            case StateDespawning:
+                StopCoroutine("DoDespawn");
+                despawnGO.SetActive(false);
+                break;
+        }
+
+        switch(state) {
+            case StateDespawning:
+                StartCoroutine("DoDespawn");
+                despawnGO.SetActive(true);
+                break;
+        }
+    }
+
+    IEnumerator DoDespawn() {
+        yield return new WaitForSeconds(despawnDelay);
+
+        if(state == StateDespawning)
+            Release();
     }
 }
