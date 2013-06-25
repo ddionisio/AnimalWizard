@@ -41,7 +41,7 @@ public class AnimalSummon : MonoBehaviour {
                 mCurCursor = mCursors[type];
 
                 mCurCursor.attach = attach;
-
+                
                 if(!mCursors.TryGetValue(mCurType, out mCurCursor))
                     Debug.LogError("No cursor for: " + mCurType);
 

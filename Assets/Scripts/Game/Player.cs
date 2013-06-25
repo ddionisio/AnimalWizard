@@ -2,7 +2,93 @@ using UnityEngine;
 using System.Collections;
 using System.Collections.Generic;
 
+public class PlayerState {
+    private Vector2 mPosition;
+    private Animal mAnimalSummon = null;
+    private List<RigidState> mRigids = null;
+
+    public PlayerState(Player player, Animal animalSummon) {
+        Vector3 pos = player.transform.position;
+        mPosition = pos;
+
+        mAnimalSummon = animalSummon;
+
+        foreach(KeyValuePair<string, List<Animal>> dat in player.summons) {
+            foreach(Animal animal in dat.Value) {
+                if(animal != animalSummon)
+                    animal.SaveState(player);
+            }
+        }
+
+        pos.z -= 1.0f;
+        RaycastHit[] hits = Physics.SphereCastAll(pos, player.saveRigidRadius, Vector3.forward, 2.0f, player.saveRigidMask);
+        if(hits.Length > 0) {
+            mRigids = new List<RigidState>(hits.Length);
+            foreach(RaycastHit hit in hits) {
+                if(hit.collider.rigidbody != null && !hit.collider.rigidbody.isKinematic)
+                    mRigids.Add(new RigidState(hit.collider.rigidbody));
+            }
+        }
+    }
+
+    public void Restore(Player player) {
+        player.transform.position = mPosition;
+
+        foreach(KeyValuePair<string, List<Animal>> dat in player.summons) {
+            foreach(Animal animal in dat.Value) {
+                if(animal != mAnimalSummon)
+                    animal.RestoreState(player);
+            }
+        }
+
+        if(mAnimalSummon != null && !mAnimalSummon.isReleased) {
+            Debug.Log("restore remove animal: " + mAnimalSummon.gameObject.name);
+            mAnimalSummon.Release();
+        }
+
+        if(mRigids != null) {
+            foreach(RigidState rstate in mRigids) {
+                rstate.Restore();
+            }
+        }
+    }
+}
+
+public class RigidState {
+    private Rigidbody mBody;
+    private Vector3 mPosition;
+    private Quaternion mRotation;
+    private Vector3 mScale;
+    private Vector3 mVelocity; //for rigidbody
+    private Vector3 mAngleVelocity; //for rigidbody
+
+    public RigidState(Rigidbody body) {
+        mBody = body;
+        mPosition = mBody.transform.position;
+        mRotation = mBody.transform.rotation;
+        mScale = mBody.transform.localScale;
+        mVelocity = mBody.velocity; //for rigidbody
+        mAngleVelocity = mBody.angularVelocity; //for rigidbody
+    }
+
+    public void Restore() {
+        if(mBody != null) {
+            mBody.transform.position = mPosition;
+            mBody.transform.rotation = mRotation;
+            mBody.transform.localScale = mScale;
+            mBody.velocity = mVelocity; //for rigidbody
+            mBody.angularVelocity = mAngleVelocity; //for rigidbody
+        }
+    }
+}
+
 public class Player : EntityBase {
+    public delegate void GenericCallback(Player player);
+
+    public float saveRigidRadius; //for when saving states, check surrounding bodies
+    public LayerMask saveRigidMask; //which layers are checked to save bodies
+
+    public event GenericCallback restoreStateCallback;
 
     private PlayerController mController;
     private FollowCamera mFollowCamera;
@@ -10,9 +96,14 @@ public class Player : EntityBase {
     private HUD mHUD;
 
     private Dictionary<string, List<Animal>> mSummons; //tracking summoned animals
+    private List<Animal> mSummoning; //tracking animals currently summoning
     private int mSummonCurSelect = -1;
 
+    private Queue<PlayerState> mStates = new Queue<PlayerState>(Animal.maxState);
+
     public FollowCamera followCamera { get { return mFollowCamera; } }
+
+    public Dictionary<string, List<Animal>> summons { get { return mSummons; } } //only for restore stuff
 
     public int summonCurSelect { get { return mSummonCurSelect; } }
 
@@ -79,6 +170,9 @@ public class Player : EntityBase {
                 return;
             }
 
+            mSummoning.Add(animal);
+
+            animal.setStateCallback += OnAnimalSummoningSetState;
             animal.releaseCallback += OnAnimalRelease;
 
             animals.Add(animal);
@@ -87,8 +181,33 @@ public class Player : EntityBase {
         }
     }
 
+    public void RestoreLastState() {
+        if(mStates.Count > 0) {
+            Debug.Log("restoring player state");
+
+            SummonSetSelect(-1);
+
+            PlayerState playerState = mStates.Dequeue();
+            playerState.Restore(this);
+
+            //release animals that are currently being summoned
+            foreach(Animal summonAnimal in mSummoning) {
+                summonAnimal.Release();
+            }
+
+            Debug.Log("removed animal summonings: " + mSummoning.Count);
+
+            mSummoning.Clear();
+
+            if(restoreStateCallback != null)
+                restoreStateCallback(this);
+        }
+    }
+
     protected override void OnDespawned() {
         //reset stuff here
+        mSummons.Clear();
+        mSummoning.Clear();
         mController.inputEnabled = false;
 
         base.OnDespawned();
@@ -96,6 +215,7 @@ public class Player : EntityBase {
 
     protected override void OnDestroy() {
         //dealloc here
+        restoreStateCallback = null;
 
         base.OnDestroy();
     }
@@ -138,18 +258,49 @@ public class Player : EntityBase {
         mFollowCamera.bounds = level.bounds;
 
         //initialize summon container
+        int maxSummonable = 0;
+
         mSummons = new Dictionary<string, List<Animal>>(level.summonItems.Length);
-        foreach(LevelInfo.SummonItem itm in level.summonItems)
+        foreach(LevelInfo.SummonItem itm in level.summonItems) {
+            maxSummonable += itm.max;
             mSummons[itm.type] = new List<Animal>(itm.max);
+        }
+
+        mSummoning = new List<Animal>(maxSummonable);
     }
 
     //void LateUpdate() {
     //}
+
+    //this is only during summoning until it gets to normal state
+    void OnAnimalSummoningSetState(EntityBase ent, int state) {
+        switch(state) {
+            case Animal.StateNormal:
+                Animal animal = ent as Animal;
+
+                Debug.Log("saving player state animal: "+animal.gameObject.name);
+
+                ent.setStateCallback -= OnAnimalSummoningSetState;
+
+                mSummoning.Remove(animal);
+
+                //save state
+                mStates.Enqueue(new PlayerState(this, animal));
+                break;
+        }
+    }
 
     void OnAnimalRelease(EntityBase ent) {
         mSummons[ent.spawnType].Remove(ent as Animal);
         ent.releaseCallback -= OnAnimalRelease;
 
         mHUD.RefreshSummons(this);
+    }
+
+    void OnDrawGizmosSelected() {
+        Gizmos.color = Color.magenta;
+
+        if(saveRigidRadius > 0.0f)
+            Gizmos.DrawWireSphere(transform.position, saveRigidRadius);
     }
 }

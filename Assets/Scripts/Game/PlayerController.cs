@@ -41,6 +41,7 @@ public class PlayerController : MonoBehaviour {
                     if(mInputEnabled) {
                         input.AddButtonCall(0, InputAction.Action, OnInputAction);
                         input.AddButtonCall(0, InputAction.Jump, OnInputJump);
+                        input.AddButtonCall(0, InputAction.Undo, OnInputUndo);
 
                         for(int i = InputAction.Select1; i <= InputAction.Select5; i++) {
                             input.AddButtonCall(0, i, OnInputSummonSelect);
@@ -49,6 +50,7 @@ public class PlayerController : MonoBehaviour {
                     else {
                         input.RemoveButtonCall(0, InputAction.Action, OnInputAction);
                         input.RemoveButtonCall(0, InputAction.Jump, OnInputJump);
+                        input.RemoveButtonCall(0, InputAction.Undo, OnInputUndo);
 
                         for(int i = InputAction.Select1; i <= InputAction.Select5; i++) {
                             input.RemoveButtonCall(0, i, OnInputSummonSelect);
@@ -94,6 +96,9 @@ public class PlayerController : MonoBehaviour {
 
     void Awake() {
         mPlayer = GetComponent<Player>();
+
+        mPlayer.restoreStateCallback += OnRestoreState;
+
         mCharCtrl = collider as CharacterController;
     }
 
@@ -128,7 +133,7 @@ public class PlayerController : MonoBehaviour {
         vel.x = mInputAxis.x * moveSpeed;
 
         vel.y -= gravity * dt;
-                
+
         if(mNumMoves > 0) {
             for(int i = 0; i < mNumMoves; i++)
                 vel += mMoves[i];
@@ -144,9 +149,9 @@ public class PlayerController : MonoBehaviour {
         }
 
         Vector3 pos = transform.position;
-                                        
+
         curVel = vel;
-        
+
         Vector3 dpos = new Vector3(vel.x * dt, vel.y * dt, -pos.z);
 
         mCharCtrl.Move(dpos);
@@ -168,13 +173,13 @@ public class PlayerController : MonoBehaviour {
 
     void FixedUpdate() {
 
-        
+
     }
 
     void OnControllerColliderHit(ControllerColliderHit hit) {
         Rigidbody hitbody = hit.collider.rigidbody;
         GameObject hitGO = hit.collider.gameObject;
-        
+
         if(hitbody != null) {
             PlayerCollisionBase collideInteract = hitGO.GetComponent<PlayerCollisionBase>();
 
@@ -198,24 +203,29 @@ public class PlayerController : MonoBehaviour {
                 //custom collision
                 collideInteract.PlayerCollide(this, flags, hit);
             }
-        }   
+        }
     }
 
 
     #region input
+
+    void OnInputUndo(InputManager.Info dat) {
+        if(dat.state == InputManager.State.Pressed) {
+            mPlayer.RestoreLastState();
+        }
+    }
 
     void OnInputAction(InputManager.Info dat) {
         if(dat.state == InputManager.State.Pressed) {
             if(mPlayer.summonCurSelect != -1) {
                 mPlayer.SummonCurrent();
 
-                //if(mPlayer.SummonGetAvailableCount(mPlayer.summonCurSelect) == 0)
-                    //mPlayer.SummonSetSelect(-1);
-                mPlayer.SummonSetSelect(-1);
+                if(mPlayer.SummonGetAvailableCount(mPlayer.summonCurSelect) == 0)
+                    mPlayer.SummonSetSelect(-1);
             }
             else {
                 //cancel an animal
-                Camera cam = mPlayer.followCamera.mainCamera;
+                /*Camera cam = mPlayer.followCamera.mainCamera;
                 Ray camRay = cam.ScreenPointToRay(Input.mousePosition);
                 RaycastHit hit;
                 if(Physics.Raycast(camRay, out hit, Mathf.Infinity, animalLayerMask)) {
@@ -230,7 +240,7 @@ public class PlayerController : MonoBehaviour {
                             mAnimalCancel.Despawn(true);
                         }
                     }
-                }
+                }*/
             }
         }
         else if(dat.state == InputManager.State.Released) {
@@ -269,6 +279,12 @@ public class PlayerController : MonoBehaviour {
     }
 
     #endregion
+
+    void OnRestoreState(Player p) {
+        mInputAxis = Vector2.zero;
+        curVel = Vector2.zero;
+        mNumMoves = 0;
+    }
 
     private CollisionFlags GetCollisionFlagsFromHit(ControllerColliderHit hit) {
         CollisionFlags ret = CollisionFlags.None;
