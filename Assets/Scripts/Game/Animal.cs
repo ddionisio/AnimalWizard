@@ -70,7 +70,7 @@ public class Animal : EntityBase {
     public event GenericStateCallback stateSaveCallback;
     public event GenericStateCallback stateRestoreCallback;
 
-    private Queue<AnimalState> mStates = new Queue<AnimalState>(maxState);
+    private Stack<AnimalState> mStates = new Stack<AnimalState>(maxState);
 
     public int numSaveStates { get { return mStates.Count; } }
 
@@ -90,13 +90,13 @@ public class Animal : EntityBase {
                 stateSaveCallback(this, player, newAnimalState);
             }
 
-            mStates.Enqueue(newAnimalState);
+            mStates.Push(newAnimalState);
         }
     }
 
     public void RestoreState(Player player) {
         if(mStates.Count > 0) {
-            AnimalState animalState = mStates.Dequeue();
+            AnimalState animalState = mStates.Pop();
 
             if(stateRestoreCallback != null) {
                 stateRestoreCallback(this, player, animalState);
@@ -126,6 +126,11 @@ public class Animal : EntityBase {
     protected override void OnDespawned() {
         //reset stuff here
         mStates.Clear();
+
+        if(rigidbody != null && !rigidbody.isKinematic) {
+            rigidbody.velocity = Vector3.zero;
+            rigidbody.angularVelocity = Vector3.zero;
+        }
 
         base.OnDespawned();
     }

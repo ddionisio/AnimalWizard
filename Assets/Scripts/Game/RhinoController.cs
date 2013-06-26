@@ -18,6 +18,8 @@ public class RhinoController : PlayerCollisionBase {
         mForce = GetComponent<ConstantForce>();
         mAnimal.summonInitCallback += OnSummonInit;
         mAnimal.setStateCallback += OnSetState;
+        mAnimal.stateSaveCallback += OnSaveState;
+        mAnimal.stateRestoreCallback += OnRestoreState;
     }
 
     // Use this for initialization
@@ -70,5 +72,14 @@ public class RhinoController : PlayerCollisionBase {
 
     void OnSummonInit(Animal animal, Player player) {
         mXDir = Mathf.Sign(transform.position.x - player.transform.position.x);
+    }
+
+    void OnSaveState(Animal animal, Player player, AnimalState state) {
+        state.SetData(1, (object)mXDir);
+    }
+
+    void OnRestoreState(Animal animal, Player player, AnimalState state) {
+        mXDir = (float)state.GetData(1);
+        mForce.force = new Vector3(mXDir * moveForce, 0.0f, 0.0f);
     }
 }

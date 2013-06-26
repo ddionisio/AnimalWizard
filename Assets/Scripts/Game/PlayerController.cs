@@ -1,5 +1,6 @@
 using UnityEngine;
 using System.Collections;
+using System.Collections.Generic;
 
 public class PlayerController : MonoBehaviour {
     public const int maxMoves = 10;
@@ -28,7 +29,9 @@ public class PlayerController : MonoBehaviour {
     private Vector2[] mMoves = new Vector2[maxMoves];
     private int mNumMoves = 0;
 
-    private Animal mAnimalCancel;
+    private Animal mAnimalCancel; //use for unsummoning an animal
+
+    //private HashSet<
 
     public bool inputEnabled {
         get { return mInputEnabled; }

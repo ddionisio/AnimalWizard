@@ -99,7 +99,7 @@ public class Player : EntityBase {
     private List<Animal> mSummoning; //tracking animals currently summoning
     private int mSummonCurSelect = -1;
 
-    private Queue<PlayerState> mStates = new Queue<PlayerState>(Animal.maxState);
+    private Stack<PlayerState> mStates = new Stack<PlayerState>(Animal.maxState);
 
     public FollowCamera followCamera { get { return mFollowCamera; } }
 
@@ -187,7 +187,7 @@ public class Player : EntityBase {
 
             SummonSetSelect(-1);
 
-            PlayerState playerState = mStates.Dequeue();
+            PlayerState playerState = mStates.Pop();
             playerState.Restore(this);
 
             //release animals that are currently being summoned
@@ -285,7 +285,7 @@ public class Player : EntityBase {
                 mSummoning.Remove(animal);
 
                 //save state
-                mStates.Enqueue(new PlayerState(this, animal));
+                mStates.Push(new PlayerState(this, animal));
                 break;
         }
     }

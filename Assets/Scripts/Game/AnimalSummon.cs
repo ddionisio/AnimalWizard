@@ -23,6 +23,10 @@ public class AnimalSummon : MonoBehaviour {
     public string curType { get { return mCurType; } }
     public AnimalSummonCursor curCursor { get { return mCurCursor; } }
 
+    public AnimalSummonCursor GetCursor(string type) {
+        return mCursors[type];
+    }
+
     /// <summary>
     /// set type to null or empty to unselect
     /// </summary>

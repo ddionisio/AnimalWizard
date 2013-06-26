@@ -3,5 +3,6 @@
 		{ "type":"elephant", "max":5 },
 		{ "type":"duck", "max":5 },
 		{ "type":"rhino", "max":5 },
+		{ "type":"raven", "max":5 },
 	]
 }

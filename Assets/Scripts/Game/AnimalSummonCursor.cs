@@ -14,6 +14,8 @@ public class AnimalSummonCursor : MonoBehaviour {
 
     private Color mDefaultColor;
 
+    public Color defaultColor { get { return mDefaultColor; } }
+
     public Transform attach { 
         get { return mAttach; } 
         set { 
@@ -24,9 +26,9 @@ public class AnimalSummonCursor : MonoBehaviour {
         } 
     }
 
-    public bool isValid { get { return mCollisionCount == 0; } }
+    public virtual bool isValid { get { return mCollisionCount == 0; } }
 
-    void OnDisable() {
+    protected virtual void OnDisable() {
         mAttach = null;
         mCollisionCount = 0;
 
@@ -34,14 +36,14 @@ public class AnimalSummonCursor : MonoBehaviour {
             sprite.color = mDefaultColor;
     }
 
-    void OnTriggerEnter(Collider c) {
+    protected virtual void OnTriggerEnter(Collider c) {
         mCollisionCount++;
 
         if(sprite != null)
             sprite.color = invalidColor;
     }
 
-    void OnTriggerExit(Collider c) {
+    protected virtual void OnTriggerExit(Collider c) {
         mCollisionCount--;
 
         if(mCollisionCount <= 0) {
@@ -52,11 +54,11 @@ public class AnimalSummonCursor : MonoBehaviour {
         }
     }
 
-    void Awake() {
+    protected virtual void Awake() {
         mDefaultColor = sprite.color;
     }
 
-    void FixedUpdate() {
+    protected virtual void FixedUpdate() {
         //update rigidbody to attach
         if(mAttach != null)
             rigidbody.MovePosition(mAttach.position);
