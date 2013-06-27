@@ -1,7 +1,7 @@
 using UnityEngine;
 using System.Collections;
 
-public class RavenController : MonoBehaviour {
+public class RavenController : MonoBehaviour, IActionStateListener {
     public enum State {
         Standby,
         Move,
@@ -141,5 +141,21 @@ public class RavenController : MonoBehaviour {
                     mState = State.Move;
                 break;
         }
+    }
+
+    void OnSpawned() {
+        ActionStateManager.instance.Register(this);
+    }
+
+    void OnDespawned() {
+        ActionStateManager.instance.Unregister(this);
+    }
+
+    public object ActionSave() {
+        return mState;
+    }
+
+    public void ActionRestore(object dat) {
+        mState = (State)dat;
     }
 }

@@ -6,8 +6,11 @@ public class PlayerController : MonoBehaviour {
     public const int maxMoves = 10;
 
     public float moveSpeed;
+    public float moveAirSpeed;
     public float jumpSpeed;
     public float gravity;
+
+    public float ladderSpeed;
 
     public float maxSpeed;
 
@@ -15,6 +18,7 @@ public class PlayerController : MonoBehaviour {
     public float pushedDelay;
 
     public LayerMask animalLayerMask;
+    public LayerMask ladderLayerMask;
 
     private Player mPlayer;
     private CharacterController mCharCtrl;
@@ -24,6 +28,8 @@ public class PlayerController : MonoBehaviour {
     private Vector2 mCurVel;
     private Vector2 mDir;
     private float mCurSpeed;
+    private HashSet<Collider> mLadderTriggers = new HashSet<Collider>();
+    private bool mIsLadderJumping;
 
     //these are for moving the player by other influence, such as platforms
     private Vector2[] mMoves = new Vector2[maxMoves];
@@ -32,6 +38,8 @@ public class PlayerController : MonoBehaviour {
     private Animal mAnimalCancel; //use for unsummoning an animal
 
     //private HashSet<
+
+    public bool isOnLadder { get { return mLadderTriggers.Count > 0; } }
 
     public bool inputEnabled {
         get { return mInputEnabled; }
@@ -100,7 +108,8 @@ public class PlayerController : MonoBehaviour {
     void Awake() {
         mPlayer = GetComponent<Player>();
 
-        mPlayer.restoreStateCallback += OnRestoreState;
+        mPlayer.setStateCallback += OnPlayerSetState;
+        mPlayer.restoreStateCallback += OnPlayerRestoreState;
 
         mCharCtrl = collider as CharacterController;
     }
@@ -116,15 +125,15 @@ public class PlayerController : MonoBehaviour {
 
         float inputXVel = 0.0f;
 
+        InputManager input = Main.instance.input;
+        
         if(mInputEnabled) {
-            InputManager input = Main.instance.input;
-
             mInputAxis.x = input.GetAxis(0, InputAction.DirX);
             mInputAxis.y = input.GetAxis(0, InputAction.DirY);
 
             //compute input velocity
             if(Mathf.Abs(mInputAxis.x) > float.Epsilon) {
-                inputXVel = mInputAxis.x * moveSpeed;
+                inputXVel = mInputAxis.x * (mCharCtrl.isGrounded ? moveSpeed : moveAirSpeed);
             }
         }
         else {
@@ -133,9 +142,19 @@ public class PlayerController : MonoBehaviour {
 
         Vector2 vel = mCurVel;
 
-        vel.x = mInputAxis.x * moveSpeed;
+        if(isOnLadder) {
+            if(mIsLadderJumping) {
+                vel.y -= gravity * dt;
+                mIsLadderJumping = vel.y > 0.0f;
+            }
+            else
+                vel.y = mInputAxis.y * ladderSpeed;
+        }
+        else {
+            mIsLadderJumping = false;
 
-        vel.y -= gravity * dt;
+            vel.y -= gravity * dt;
+        }
 
         if(mNumMoves > 0) {
             for(int i = 0; i < mNumMoves; i++)
@@ -145,10 +164,9 @@ public class PlayerController : MonoBehaviour {
 
         //add input move, cancel x velocity if input moving opposite direction
         if(inputXVel != 0.0f) {
-            if(Mathf.Sign(inputXVel) != Mathf.Sign(vel.x))
+            if(Mathf.Abs(vel.x) < Mathf.Abs(inputXVel) || Mathf.Sign(inputXVel) != Mathf.Sign(vel.x)) {
                 vel.x = inputXVel;
-            else
-                vel.x += inputXVel;
+            }
         }
 
         Vector3 pos = transform.position;
@@ -161,8 +179,20 @@ public class PlayerController : MonoBehaviour {
 
         bool updateVel = false;
 
-        if(mCharCtrl.isGrounded && vel.y < 0.0f) {
-            vel.y = 0.0f;
+        if(isOnLadder) {
+            vel.x = inputXVel;
+
+            if(!mIsLadderJumping)
+                vel.y = 0.0f;
+
+            updateVel = true;
+        }
+        else if(mCharCtrl.isGrounded) {
+            if(vel.y < 0.0f)
+                vel.y = 0.0f;
+
+            vel.x = inputXVel;
+
             updateVel = true;
         }
         else if((mCharCtrl.collisionFlags & CollisionFlags.Above) != 0 && vel.y > 0.0f) {
@@ -174,9 +204,18 @@ public class PlayerController : MonoBehaviour {
             curVel = vel;
     }
 
-    void FixedUpdate() {
+    void OnTriggerEnter(Collider col) {
+        mLadderTriggers.Clear(); //refresh by stay callback
+    }
 
+    void OnTriggerStay(Collider col) {
+        if(((1 << col.gameObject.layer) & ladderLayerMask) != 0)
+            mLadderTriggers.Add(col);
+    }
 
+    void OnTriggerExit(Collider col) {
+        if(((1 << col.gameObject.layer) & ladderLayerMask) != 0)
+            mLadderTriggers.Remove(col);
     }
 
     void OnControllerColliderHit(ControllerColliderHit hit) {
@@ -257,7 +296,8 @@ public class PlayerController : MonoBehaviour {
 
     void OnInputJump(InputManager.Info dat) {
         if(dat.state == InputManager.State.Pressed) {
-            if(mCharCtrl.isGrounded) {
+            if(mCharCtrl.isGrounded || isOnLadder) {
+                mIsLadderJumping = isOnLadder;    
                 mCurVel.y = jumpSpeed;
             }
         }
@@ -283,10 +323,27 @@ public class PlayerController : MonoBehaviour {
 
     #endregion
 
-    void OnRestoreState(Player p) {
+    void OnPlayerRelease(EntityBase ent) {
+        inputEnabled = false;
+    }
+
+    void OnPlayerSetState(EntityBase ent, int state) {
+        switch(state) {
+            case Player.StateNormal:
+                inputEnabled = true;
+                break;
+
+            case Player.StateDead:
+                inputEnabled = false;
+                break;
+        }
+    }
+
+    void OnPlayerRestoreState(Player p) {
         mInputAxis = Vector2.zero;
         curVel = Vector2.zero;
         mNumMoves = 0;
+        mLadderTriggers.Clear();
     }
 
     private CollisionFlags GetCollisionFlagsFromHit(ControllerColliderHit hit) {

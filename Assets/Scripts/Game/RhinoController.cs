@@ -1,7 +1,7 @@
 using UnityEngine;
 using System.Collections;
 
-public class RhinoController : PlayerCollisionBase {
+public class RhinoController : PlayerCollisionBase, IActionStateListener {
     public float moveForce;
 
     public float turnMoveableAngle = 45.0f; //angle from up vector, if angle bet. up and normal is greater, then we turn
@@ -18,8 +18,6 @@ public class RhinoController : PlayerCollisionBase {
         mForce = GetComponent<ConstantForce>();
         mAnimal.summonInitCallback += OnSummonInit;
         mAnimal.setStateCallback += OnSetState;
-        mAnimal.stateSaveCallback += OnSaveState;
-        mAnimal.stateRestoreCallback += OnRestoreState;
     }
 
     // Use this for initialization
@@ -70,16 +68,24 @@ public class RhinoController : PlayerCollisionBase {
         }
     }
 
+    void OnSpawned() {
+        ActionStateManager.instance.Register(this);
+    }
+
+    void OnDespawned() {
+        ActionStateManager.instance.Unregister(this);
+    }
+
     void OnSummonInit(Animal animal, Player player) {
         mXDir = Mathf.Sign(transform.position.x - player.transform.position.x);
     }
 
-    void OnSaveState(Animal animal, Player player, AnimalState state) {
-        state.SetData(1, (object)mXDir);
+    public object ActionSave() {
+        return mXDir;
     }
 
-    void OnRestoreState(Animal animal, Player player, AnimalState state) {
-        mXDir = (float)state.GetData(1);
+    public void ActionRestore(object dat) {
+        mXDir = (float)dat;
         mForce.force = new Vector3(mXDir * moveForce, 0.0f, 0.0f);
     }
 }
