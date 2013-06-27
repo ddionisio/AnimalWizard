@@ -17,6 +17,9 @@ public class PlayerController : MonoBehaviour {
     public float pushForce;
     public float pushedDelay;
 
+    public float dropPlatformDelay;
+    public LayerMask dropPlatformMask;
+
     public LayerMask animalLayerMask;
     public LayerMask ladderLayerMask;
 
@@ -35,7 +38,11 @@ public class PlayerController : MonoBehaviour {
     private Vector2[] mMoves = new Vector2[maxMoves];
     private int mNumMoves = 0;
 
+    private float mLastInputYUpTime;
+
     private Animal mAnimalCancel; //use for unsummoning an animal
+
+    private ControllerColliderHit mLastHit;
 
     //private HashSet<
 
@@ -94,6 +101,8 @@ public class PlayerController : MonoBehaviour {
         }
     }
 
+    public float curSpeed { get { return mCurSpeed; } }
+
     public void AddMove(Vector2 move) {
         if(mNumMoves < maxMoves) {
             mMoves[mNumMoves] = move;
@@ -121,12 +130,13 @@ public class PlayerController : MonoBehaviour {
 
     // Update is called once per frame
     void Update() {
+        Vector3 pos = transform.position;
         float dt = Time.deltaTime;
 
         float inputXVel = 0.0f;
 
         InputManager input = Main.instance.input;
-        
+
         if(mInputEnabled) {
             mInputAxis.x = input.GetAxis(0, InputAction.DirX);
             mInputAxis.y = input.GetAxis(0, InputAction.DirY);
@@ -134,6 +144,21 @@ public class PlayerController : MonoBehaviour {
             //compute input velocity
             if(Mathf.Abs(mInputAxis.x) > float.Epsilon) {
                 inputXVel = mInputAxis.x * (mCharCtrl.isGrounded ? moveSpeed : moveAirSpeed);
+            }
+
+            if(mInputAxis.y < 0.0f && mCharCtrl.isGrounded && mLastHit != null && ((1 << mLastHit.gameObject.layer) & dropPlatformMask) != 0) {
+                if(Time.fixedTime - mLastInputYUpTime >= dropPlatformDelay) {
+                    pos.y -= mCharCtrl.stepOffset;
+                    mCharCtrl.detectCollisions = false;
+                    transform.position = pos;
+
+                    mLastInputYUpTime = Time.fixedTime;
+
+                    return;
+                }
+            }
+            else {
+                mLastInputYUpTime = Time.fixedTime;
             }
         }
         else {
@@ -163,24 +188,23 @@ public class PlayerController : MonoBehaviour {
         }
 
         //add input move, cancel x velocity if input moving opposite direction
-        if(inputXVel != 0.0f) {
+        if(inputXVel != 0.0f) {// && (mCharCtrl.collisionFlags & CollisionFlags.Sides) == CollisionFlags.None) {
             if(Mathf.Abs(vel.x) < Mathf.Abs(inputXVel) || Mathf.Sign(inputXVel) != Mathf.Sign(vel.x)) {
                 vel.x = inputXVel;
             }
         }
-
-        Vector3 pos = transform.position;
-
+                
         curVel = vel;
 
         Vector3 dpos = new Vector3(vel.x * dt, vel.y * dt, -pos.z);
 
+        mCharCtrl.detectCollisions = true;
         mCharCtrl.Move(dpos);
 
         bool updateVel = false;
 
         if(isOnLadder) {
-            vel.x = inputXVel;
+            vel.x = (mCharCtrl.collisionFlags & CollisionFlags.Sides) == CollisionFlags.None ? inputXVel : 0.0f;
 
             if(!mIsLadderJumping)
                 vel.y = 0.0f;
@@ -191,7 +215,7 @@ public class PlayerController : MonoBehaviour {
             if(vel.y < 0.0f)
                 vel.y = 0.0f;
 
-            vel.x = inputXVel;
+            vel.x = (mCharCtrl.collisionFlags & CollisionFlags.Sides) == CollisionFlags.None ? inputXVel : 0.0f;
 
             updateVel = true;
         }
@@ -219,8 +243,10 @@ public class PlayerController : MonoBehaviour {
     }
 
     void OnControllerColliderHit(ControllerColliderHit hit) {
+        mLastHit = hit;
+
         Rigidbody hitbody = hit.collider.rigidbody;
-        GameObject hitGO = hit.collider.gameObject;
+        GameObject hitGO = hit.gameObject;
 
         if(hitbody != null) {
             PlayerCollisionBase collideInteract = hitGO.GetComponent<PlayerCollisionBase>();
@@ -344,6 +370,8 @@ public class PlayerController : MonoBehaviour {
         curVel = Vector2.zero;
         mNumMoves = 0;
         mLadderTriggers.Clear();
+        mLastHit = null;
+        mLastInputYUpTime = Time.fixedTime;
     }
 
     private CollisionFlags GetCollisionFlagsFromHit(ControllerColliderHit hit) {

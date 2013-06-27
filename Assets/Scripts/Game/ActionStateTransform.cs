@@ -26,10 +26,14 @@ public class ActionStateTransform : MonoBehaviour, IActionStateListener {
 
         public void Restore() {
             if(mBody != null) {
+                bool kinematic = mBody.isKinematic;
+
+                mBody.isKinematic = true;
                 mBody.transform.position = mPosition;
                 mBody.transform.rotation = mRotation;
                 mBody.transform.localScale = mScale;
 
+                mBody.isKinematic = kinematic;
                 if(!mBody.isKinematic) {
                     mBody.velocity = mVelocity; //for rigidbody
                     mBody.angularVelocity = mAngleVelocity; //for rigidbody

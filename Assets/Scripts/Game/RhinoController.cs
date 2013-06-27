@@ -25,7 +25,7 @@ public class RhinoController : PlayerCollisionBase, IActionStateListener {
 
     }
 
-    void OnCollisionEnter(Collision col) {
+    void OnCollisionStay(Collision col) {
         bool doOpposite = false;
 
         foreach(ContactPoint contact in col.contacts) {
@@ -34,7 +34,7 @@ public class RhinoController : PlayerCollisionBase, IActionStateListener {
                     Vector2 contactNormal = contact.normal;
 
                     float a = Vector2.Angle(Vector2.up, contactNormal);
-                    if(a > turnMoveableAngle)
+                    if(a > turnMoveableAngle && Mathf.Sign(contactNormal.x) != mXDir)
                         doOpposite = true;
                 }
             }

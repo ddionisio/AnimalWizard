@@ -11,12 +11,14 @@ public class Player : EntityBase, IActionStateListener {
     public class ActionState {
         private Vector2 mPosition;
         private Animal mAnimalSummon = null;
+        private int mState;
 
-        public ActionState(Player player, Animal animalSummon) {
+        public ActionState(Player player) {
             Vector3 pos = player.transform.position;
             mPosition = pos;
 
-            mAnimalSummon = animalSummon;
+            mState = player.state;
+            mAnimalSummon = player.mLastSummoning;
         }
 
         public void Restore(Player player) {
@@ -39,6 +41,8 @@ public class Player : EntityBase, IActionStateListener {
             }
 
             player.SummonSetSelect(-1);
+
+            player.state = mState;
 
             if(player.restoreStateCallback != null)
                 player.restoreStateCallback(player);
@@ -218,6 +222,10 @@ public class Player : EntityBase, IActionStateListener {
         mSummoning = new List<Animal>(maxSummonable);
     }
 
+    void OnApplicationFocus(bool focus) {
+        SummonSetSelect(-1);
+    }
+
     //void LateUpdate() {
     //}
 
@@ -253,7 +261,7 @@ public class Player : EntityBase, IActionStateListener {
     }
 
     public object ActionSave() {
-        ActionState newAction = new ActionState(this, mLastSummoning);
+        ActionState newAction = new ActionState(this);
         mLastSummoning = null;
         return newAction;
     }
