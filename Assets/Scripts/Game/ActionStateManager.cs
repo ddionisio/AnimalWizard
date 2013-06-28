@@ -26,6 +26,8 @@ public class ActionStateManager : MonoBehaviour {
 
     public static ActionStateManager instance { get { return mInstance; } }
 
+    public int stateCount { get { return mStates.Count; } }
+
     public void Register(IActionStateListener listener) {
         mListeners.Add(listener);
     }
@@ -47,9 +49,9 @@ public class ActionStateManager : MonoBehaviour {
             mStates.Push(newStates);
     }
 
-    public void RestoreLast() {
+    public void RestoreLast(bool dontRemove = false) {
         if(mStates.Count > 0) {
-            List<Pair> states = mStates.Pop();
+            List<Pair> states = dontRemove ? mStates.Peek() : mStates.Pop();
             foreach(Pair pair in states) {
                 //make sure listener still exists
                 if(mListeners.Contains(pair.listener)) {

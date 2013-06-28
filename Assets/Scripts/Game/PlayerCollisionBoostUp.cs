@@ -11,7 +11,8 @@ public class PlayerCollisionBoostUp : PlayerCollisionBase {
         if(vel.y > tolerance && (flags & CollisionFlags.Below) != 0) {
             //Vector2 playerVel = pc.curVel;
             //pc.AddMove(new Vector2(0.0f, playerVel.y < 0.0f ? boost - playerVel.y : boost));
-            pc.AddMove(new Vector2(0.0f, boost));
+
+            pc.velocityMod.y += boost;
         }
     }
 

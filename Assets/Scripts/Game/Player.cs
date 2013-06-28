@@ -146,37 +146,66 @@ public class Player : EntityBase, IActionStateListener {
     }
 
     public void RestoreLastState() {
-        ActionStateManager.instance.RestoreLast();
+        //if only one restore, do it only if we are dead
+        if(ActionStateManager.instance.stateCount == 1) {
+            if(state == StateDead)
+                ActionStateManager.instance.RestoreLast(true);
+        }
+        else
+            ActionStateManager.instance.RestoreLast();
     }
 
-    protected override void OnDespawned() {
+    void ClearData() {
+        state = StateInvalid;
+
         //reset stuff here
         mSummons.Clear();
         mSummoning.Clear();
 
-        ActionStateManager.instance.Unregister(this);
+        if(ActionStateManager.instance != null)
+            ActionStateManager.instance.Unregister(this);
+    }
+
+    protected override void OnDespawned() {
+        ClearData();
 
         base.OnDespawned();
     }
 
     protected override void OnDestroy() {
+        ClearData();
+
         if(mInstance == this)
             mInstance = null;
-
+                
         //dealloc here
         restoreStateCallback = null;
 
         base.OnDestroy();
     }
 
+    protected override void StateChanged() {
+        switch(state) {
+            case StateNormal:
+                mFollowCamera.target = transform;
+                mFollowCamera.focusEnable = true;
+                break;
+
+            case StateDead:
+                Debug.Log("dead");
+                mFollowCamera.target = null;
+                mFollowCamera.focusEnable = false;
+                break;
+        }
+    }
+
     public override void SpawnFinish() {
         //start ai, player control, etc
         ActionStateManager.instance.Register(this);
-
-        mFollowCamera.target = transform;
-        mFollowCamera.focusEnable = true;
-
+                
         state = StateNormal;
+
+        ActionStateManager.instance.Save(); //when no other states are recoverable if we die
     }
 
     protected override void SpawnStart() {
@@ -228,7 +257,7 @@ public class Player : EntityBase, IActionStateListener {
 
     //void LateUpdate() {
     //}
-
+        
     //this is only during summoning until it gets to normal state
     void OnAnimalSummoningSetState(EntityBase ent, int state) {
         switch(state) {

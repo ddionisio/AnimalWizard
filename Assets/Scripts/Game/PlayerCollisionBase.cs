@@ -2,6 +2,7 @@ using UnityEngine;
 using System.Collections;
 
 public class PlayerCollisionBase : MonoBehaviour {
+    public bool solidPushBack = false; //if we are going to use velocity of rigidbody
     public bool pushBackAbove; //which collision flag from player to push back
     public bool pushBackSide;
     public bool pushBackBelow;
@@ -30,6 +31,9 @@ public class PlayerCollisionBase : MonoBehaviour {
             mPushFlags |= CollisionFlags.Sides;
         if(pushBelow)
             mPushFlags |= CollisionFlags.Below;
+    }
+
+    public virtual void PlayerCollisionStay(PlayerController pc, CollisionFlags flags, ContactPoint hit) {
     }
 
     public virtual void PlayerCollide(PlayerController pc, CollisionFlags flags, ControllerColliderHit hit) {

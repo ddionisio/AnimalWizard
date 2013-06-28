@@ -17,6 +17,8 @@ public class PlayerController : MonoBehaviour {
     public float pushForce;
     public float pushedDelay;
 
+    public float nudgeOfs;
+
     public float dropPlatformDelay;
     public LayerMask dropPlatformMask;
 
@@ -38,13 +40,19 @@ public class PlayerController : MonoBehaviour {
     private Vector2[] mMoves = new Vector2[maxMoves];
     private int mNumMoves = 0;
 
+    [System.NonSerialized]
+    public Vector2 velocityMod; //fill this up during collisions and triggers, will be added to curVel during move and reset afterwards
+
     private float mLastInputYUpTime;
 
     private Animal mAnimalCancel; //use for unsummoning an animal
 
     private ControllerColliderHit mLastHit;
+    private bool mLastGrounded;
 
     //private HashSet<
+
+    public bool isGrounded { get { return mCharCtrl.isGrounded || mLastGrounded; } }
 
     public bool isOnLadder { get { return mLadderTriggers.Count > 0; } }
 
@@ -83,6 +91,8 @@ public class PlayerController : MonoBehaviour {
 
     public CharacterController charCtrl { get { return mCharCtrl; } }
 
+    public ControllerColliderHit lastHit { get { return mLastHit; } }
+
     public Vector2 curVel {
         get { return mCurVel; }
         set {
@@ -101,12 +111,18 @@ public class PlayerController : MonoBehaviour {
         }
     }
 
+    public Vector2 dir { get { return mDir; } }
+
     public float curSpeed { get { return mCurSpeed; } }
+
+    public int moveCount { get { return mNumMoves; } }
 
     public void AddMove(Vector2 move) {
         if(mNumMoves < maxMoves) {
             mMoves[mNumMoves] = move;
             mNumMoves++;
+
+            //Debug.Log("moves: " + mNumMoves + " vel: " + move);
         }
     }
 
@@ -126,14 +142,13 @@ public class PlayerController : MonoBehaviour {
     // Use this for initialization
     void Start() {
         //rigidbody.AddForce(Vector3.zero, ForceMode.
+        //mCharCtrl.plat
     }
 
     // Update is called once per frame
-    void Update() {
+    void FixedUpdate() {
         Vector3 pos = transform.position;
-        float dt = Time.deltaTime;
-
-        float inputXVel = 0.0f;
+        float dt = Time.fixedDeltaTime;
 
         InputManager input = Main.instance.input;
 
@@ -141,12 +156,7 @@ public class PlayerController : MonoBehaviour {
             mInputAxis.x = input.GetAxis(0, InputAction.DirX);
             mInputAxis.y = input.GetAxis(0, InputAction.DirY);
 
-            //compute input velocity
-            if(Mathf.Abs(mInputAxis.x) > float.Epsilon) {
-                inputXVel = mInputAxis.x * (mCharCtrl.isGrounded ? moveSpeed : moveAirSpeed);
-            }
-
-            if(mInputAxis.y < 0.0f && mCharCtrl.isGrounded && mLastHit != null && ((1 << mLastHit.gameObject.layer) & dropPlatformMask) != 0) {
+            if(mInputAxis.y < 0.0f && isGrounded && mLastHit != null && ((1 << mLastHit.gameObject.layer) & dropPlatformMask) != 0) {
                 if(Time.fixedTime - mLastInputYUpTime >= dropPlatformDelay) {
                     pos.y -= mCharCtrl.stepOffset;
                     mCharCtrl.detectCollisions = false;
@@ -165,7 +175,10 @@ public class PlayerController : MonoBehaviour {
             mInputAxis = Vector2.zero;
         }
 
-        Vector2 vel = mCurVel;
+        mCharCtrl.detectCollisions = true;
+
+        Vector2 vel = mCurVel + velocityMod;
+        velocityMod = Vector2.zero;
 
         if(isOnLadder) {
             if(mIsLadderJumping) {
@@ -181,55 +194,116 @@ public class PlayerController : MonoBehaviour {
             vel.y -= gravity * dt;
         }
 
-        if(mNumMoves > 0) {
+        /*if(mNumMoves > 0) {
             for(int i = 0; i < mNumMoves; i++)
                 vel += mMoves[i];
             mNumMoves = 0;
-        }
+        }*/
 
         //add input move, cancel x velocity if input moving opposite direction
-        if(inputXVel != 0.0f) {// && (mCharCtrl.collisionFlags & CollisionFlags.Sides) == CollisionFlags.None) {
-            if(Mathf.Abs(vel.x) < Mathf.Abs(inputXVel) || Mathf.Sign(inputXVel) != Mathf.Sign(vel.x)) {
-                vel.x = inputXVel;
+        /*float inputXVel = 0.0f;
+        if(Mathf.Abs(mInputAxis.x) > float.Epsilon) {// && (mCharCtrl.collisionFlags & CollisionFlags.Sides) == CollisionFlags.None) {
+            inputXVel = mInputAxis.x * (isGrounded ? moveSpeed : moveAirSpeed);
+
+            if(Mathf.Sign(inputXVel) != Mathf.Sign(vel.x)) {
+                if(Mathf.Abs(vel.x) < Mathf.Abs(inputXVel)) {
+                    vel.x = inputXVel;
+                }
             }
-        }
+            else if(mCharCtrl.isGrounded) {
+                vel.x += inputXVel;
+            }
+        }*/
+
+        mLastHit = null;
+
+        //current velocity move
+        pos = transform.position;
                 
         curVel = vel;
 
         Vector3 dpos = new Vector3(vel.x * dt, vel.y * dt, -pos.z);
 
-        mCharCtrl.detectCollisions = true;
-        mCharCtrl.Move(dpos);
+        CollisionFlags collFlags = mCharCtrl.Move(dpos);
 
-        bool updateVel = false;
+        mLastGrounded = mCharCtrl.isGrounded;
+        //
 
+        //x input move
+        float inputXVel = 0.0f;
+        if(Mathf.Abs(mInputAxis.x) > float.Epsilon) {// && (mCharCtrl.collisionFlags & CollisionFlags.Sides) == CollisionFlags.None) {
+            if(mCharCtrl.isGrounded) {
+                inputXVel = mInputAxis.x * moveSpeed;
+            }
+            else {
+                inputXVel = mInputAxis.x * moveAirSpeed;
+            }
+
+            //inputXVel = mInputAxis.x * (mCharCtrl.isGrounded ? moveSpeed : moveAirSpeed);
+        }
+
+        //move
+        Vector2 mvel = new Vector2(isGrounded ? inputXVel : 0.0f, 0.0f);
+        if(mNumMoves > 0) {
+            for(int i = 0; i < mNumMoves; i++)
+                mvel += mMoves[i];
+
+            mNumMoves = 0;
+        }
+
+        //curVel = mvel;
+
+        if((isOnLadder || isGrounded) && inputXVel != 0.0f) {
+            if(Mathf.Abs(mvel.x) < Mathf.Abs(inputXVel) || Mathf.Sign(inputXVel) != Mathf.Sign(mvel.x))
+                mvel.x = inputXVel;
+        }
+
+        mCharCtrl.Move(mvel * dt);
+        mNumMoves = 0;
+        //
+        /*
+        if(mNumMoves > 0) {
+            mvel = new Vector2(0.0f, 0.0f);
+            for(int i = 0; i < mNumMoves; i++)
+                mvel += mMoves[i];
+
+            mCharCtrl.Move(mvel * dt);
+            mNumMoves = 0;
+        }*/
+
+        //adjust
         if(isOnLadder) {
-            vel.x = (mCharCtrl.collisionFlags & CollisionFlags.Sides) == CollisionFlags.None ? inputXVel : 0.0f;
+            vel.x = 0.0f;
 
             if(!mIsLadderJumping)
                 vel.y = 0.0f;
-
-            updateVel = true;
         }
-        else if(mCharCtrl.isGrounded) {
-            if(vel.y < 0.0f)
+        else if(isGrounded) {
+            vel.x = 0.0f;
+        }
+        else {
+            if(inputXVel != 0.0f) {
+                if(Mathf.Abs(vel.x) < Mathf.Abs(inputXVel) || Mathf.Sign(inputXVel) != Mathf.Sign(vel.x))
+                    vel.x = inputXVel;
+            }
+
+            if(((mCharCtrl.collisionFlags | collFlags) & CollisionFlags.Above) != 0 && vel.y > 0.0f) {
                 vel.y = 0.0f;
-
-            vel.x = (mCharCtrl.collisionFlags & CollisionFlags.Sides) == CollisionFlags.None ? inputXVel : 0.0f;
-
-            updateVel = true;
-        }
-        else if((mCharCtrl.collisionFlags & CollisionFlags.Above) != 0 && vel.y > 0.0f) {
-            vel.y = 0.0f;
-            updateVel = true;
+            }
         }
 
-        if(updateVel)
-            curVel = vel;
+        curVel = vel;
     }
 
     void OnTriggerEnter(Collider col) {
         mLadderTriggers.Clear(); //refresh by stay callback
+
+        //die
+        PlayerCollisionDeath death = col.GetComponent<PlayerCollisionDeath>();
+        if(death != null) {
+            player.state = Player.StateDead;
+        }
+        //if(
     }
 
     void OnTriggerStay(Collider col) {
@@ -248,17 +322,18 @@ public class PlayerController : MonoBehaviour {
         Rigidbody hitbody = hit.collider.rigidbody;
         GameObject hitGO = hit.gameObject;
 
-        if(hitbody != null) {
-            PlayerCollisionBase collideInteract = hitGO.GetComponent<PlayerCollisionBase>();
+        PlayerCollisionBase collideInteract = hitGO.GetComponent<PlayerCollisionBase>();
 
-            if(collideInteract != null) {
-                CollisionFlags flags = GetCollisionFlagsFromHit(hit);
+        if(collideInteract != null) {
+            CollisionFlags flags = GetCollisionFlagsFromHit(hit);
 
+            if(hitbody != null) {
                 if(collideInteract.pushBackFlags != CollisionFlags.None && (collideInteract.pushBackFlags & flags) != 0) {
-                    //push player
-                    Vector2 vel = hitbody.GetPointVelocity(hit.point);
 
-                    if(vel != Vector2.zero) {
+                    //push player
+                    Vector2 vel = collideInteract.solidPushBack ? hitbody.velocity : hitbody.GetPointVelocity(hit.point);
+
+                    if(vel != Vector2.zero){// && Mathf.Abs(Mathf.Acos(Vector2.Dot(vel.normalized, hit.normal))) <= 95.0f * Mathf.Deg2Rad) {
                         AddMove(vel);
                     }
                 }
@@ -267,10 +342,10 @@ public class PlayerController : MonoBehaviour {
                     //push hit object
                     hitbody.AddForceAtPosition(hit.moveDirection * pushForce, hit.point);
                 }
-
-                //custom collision
-                collideInteract.PlayerCollide(this, flags, hit);
             }
+
+            //custom collision
+            collideInteract.PlayerCollide(this, flags, hit);
         }
     }
 
@@ -279,6 +354,10 @@ public class PlayerController : MonoBehaviour {
 
     void OnInputUndo(InputManager.Info dat) {
         if(dat.state == InputManager.State.Pressed) {
+            //if we were dead, remove this input, it will be added back after restore (hopefully)
+            if(mPlayer.state == Player.StateDead)
+                Main.instance.input.RemoveButtonCall(0, InputAction.Undo, OnInputUndo);
+
             mPlayer.RestoreLastState();
         }
     }
@@ -322,7 +401,7 @@ public class PlayerController : MonoBehaviour {
 
     void OnInputJump(InputManager.Info dat) {
         if(dat.state == InputManager.State.Pressed) {
-            if(mCharCtrl.isGrounded || isOnLadder) {
+            if(isGrounded || isOnLadder) {
                 mIsLadderJumping = isOnLadder;    
                 mCurVel.y = jumpSpeed;
             }
@@ -349,18 +428,24 @@ public class PlayerController : MonoBehaviour {
 
     #endregion
 
-    void OnPlayerRelease(EntityBase ent) {
-        inputEnabled = false;
-    }
-
     void OnPlayerSetState(EntityBase ent, int state) {
         switch(state) {
             case Player.StateNormal:
                 inputEnabled = true;
                 break;
 
+            case Player.StateInvalid:
+                if(!inputEnabled && ent.prevState == Player.StateDead)
+                    Main.instance.input.RemoveButtonCall(0, InputAction.Undo, OnInputUndo);
+
+                inputEnabled = false;
+                break;
+
             case Player.StateDead:
                 inputEnabled = false;
+
+                //allow undo
+                Main.instance.input.AddButtonCall(0, InputAction.Undo, OnInputUndo);
                 break;
         }
     }
