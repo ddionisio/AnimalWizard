@@ -2,7 +2,7 @@ using UnityEngine;
 using System.Collections;
 
 //need rigidbody
-public class PlayerCollisionPlatform : PlayerCollisionBase {
+public class PlayerCollisionPlatform : PlayerCollisionBase, IActionStateListener {
     private WaypointMover mWPMover;
 
     void DoCollision(PlayerController pc, CollisionFlags flags, Vector3 hitPos, Vector3 hitNormal) {
@@ -36,7 +36,28 @@ public class PlayerCollisionPlatform : PlayerCollisionBase {
         DoCollision(pc, flags, hit.point, hit.normal);
     }
 
+    void OnCollisionEnter(Collision col) {
+        if(mWPMover != null) {
+            bool doReverse = false;
+
+            foreach(ContactPoint contact in col.contacts) {
+                if(Mathf.Abs(Mathf.Acos(Vector3.Dot(contact.normal, mWPMover.dir))) > Mathf.PI * 0.5f) {
+                    doReverse = true;
+                    break;
+                }
+            }
+
+            if(doReverse)
+                mWPMover.reverse = !mWPMover.reverse;
+        }
+    }
+
     void OnEnable() {
+    }
+
+    void OnDestroy() {
+        if(ActionStateManager.instance != null)
+            ActionStateManager.instance.Unregister(this);
     }
 
     protected override void Awake() {
@@ -46,5 +67,20 @@ public class PlayerCollisionPlatform : PlayerCollisionBase {
     }
 
     void Start() {
+        ActionStateManager.instance.Register(this);
+    }
+
+    public object ActionSave() {
+        if(mWPMover != null)
+            return new WaypointMover.SaveState(mWPMover);
+        else
+            return new ActionStateTransform.State(transform);
+    }
+
+    public void ActionRestore(object dat) {
+        if(mWPMover != null)
+            ((WaypointMover.SaveState)dat).Restore();
+        else
+            ((ActionStateTransform.State)dat).Restore();
     }
 }

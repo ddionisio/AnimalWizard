@@ -7,7 +7,7 @@ public class Animal : EntityBase, IActionStateListener {
         private int mEntityState;
 
         public ActionState(Animal animal)
-            : base(animal.rigidbody) {
+            : base(animal.transform) {
                 mEntityState = animal.state;
         }
 

@@ -3,40 +3,42 @@ using System.Collections;
 
 public class ActionStateTransform : MonoBehaviour, IActionStateListener {
     public class State {
-        private Rigidbody mBody;
+        private Transform mTrans;
         private Vector3 mPosition;
         private Quaternion mRotation;
         private Vector3 mScale;
         private Vector3 mVelocity; //for rigidbody
         private Vector3 mAngleVelocity; //for rigidbody
 
-        public State(Rigidbody body) {
-            mBody = body;
-            if(mBody != null) {
-                mPosition = mBody.transform.position;
-                mRotation = mBody.transform.rotation;
-                mScale = mBody.transform.localScale;
+        public State(Transform t) {
+            mTrans = t;
 
-                if(!mBody.isKinematic) {
-                    mVelocity = mBody.velocity; //for rigidbody
-                    mAngleVelocity = mBody.angularVelocity; //for rigidbody
-                }
+            mPosition = mTrans.position;
+            mRotation = mTrans.rotation;
+            mScale = mTrans.localScale;
+
+            if(mTrans.rigidbody != null && !mTrans.rigidbody.isKinematic) {
+                mVelocity = mTrans.rigidbody.velocity; //for rigidbody
+                mAngleVelocity = mTrans.rigidbody.angularVelocity; //for rigidbody
             }
         }
 
         public void Restore() {
-            if(mBody != null) {
-                bool kinematic = mBody.isKinematic;
+            if(mTrans != null) {
+                bool applyRigidBody = mTrans.rigidbody != null && !mTrans.rigidbody.isKinematic;
 
-                mBody.isKinematic = true;
-                mBody.transform.position = mPosition;
-                mBody.transform.rotation = mRotation;
-                mBody.transform.localScale = mScale;
+                if(applyRigidBody)
+                    mTrans.rigidbody.isKinematic = true;
 
-                mBody.isKinematic = kinematic;
-                if(!mBody.isKinematic) {
-                    mBody.velocity = mVelocity; //for rigidbody
-                    mBody.angularVelocity = mAngleVelocity; //for rigidbody
+                mTrans.position = mPosition;
+                mTrans.rotation = mRotation;
+                mTrans.localScale = mScale;
+
+                if(applyRigidBody) {
+                    mTrans.rigidbody.isKinematic = false;
+
+                    mTrans.rigidbody.velocity = mVelocity; //for rigidbody
+                    mTrans.rigidbody.angularVelocity = mAngleVelocity; //for rigidbody
                 }
             }
         }
@@ -58,7 +60,7 @@ public class ActionStateTransform : MonoBehaviour, IActionStateListener {
     }
 	
 	public object ActionSave() {
-		return new State(rigidbody);
+		return new State(transform);
 	}
 	
 	public void ActionRestore(object dat) {
