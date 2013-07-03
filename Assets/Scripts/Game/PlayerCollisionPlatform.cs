@@ -71,6 +71,9 @@ public class PlayerCollisionPlatform : PlayerCollisionBase, IActionStateListener
     }
 
     public object ActionSave() {
+        if(!gameObject.activeSelf)
+            return null;
+
         if(mWPMover != null)
             return new WaypointMover.SaveState(mWPMover);
         else

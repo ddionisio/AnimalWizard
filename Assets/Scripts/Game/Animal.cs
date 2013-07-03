@@ -128,7 +128,7 @@ public class Animal : EntityBase, IActionStateListener {
     }
 
     public object ActionSave() {
-        if(state == StateNormal) {
+        if(gameObject.activeSelf && state == StateNormal) {
             if(FSM != null)
                 FSM.SendEvent(EntityEvent.Save);
 

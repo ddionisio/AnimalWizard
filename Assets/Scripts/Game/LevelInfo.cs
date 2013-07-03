@@ -20,11 +20,17 @@ public class LevelInfo : MonoBehaviour {
 
     public Rect bounds;
 
+    public Transform totemHolder;
+
+    public Transform goal;
+
     private static LevelInfo mInstance;
 
     private SummonItem[] mSummonItems;
 
     public static LevelInfo instance { get { return mInstance; } }
+
+    public int totemCount { get { return totemHolder != null ? totemHolder.childCount : 0; } }
 
     public SummonItem[] summonItems { get { return mSummonItems; } }
 

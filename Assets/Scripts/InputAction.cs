@@ -11,4 +11,5 @@ public struct InputAction {
     public const int Select3 = 8;
     public const int Select4 = 9;
     public const int Select5 = 10;
+    public const int MenuAccept = 11;
 }

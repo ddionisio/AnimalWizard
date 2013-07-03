@@ -8,10 +8,12 @@ public class PlayerController : MonoBehaviour {
     public float moveSpeed;
     public float moveAirSpeed;
     public float jumpSpeed;
+    public float jumpCancelSpeed;
     public float gravity;
 
     public float ladderSpeed;
 
+    public float maxFallSpeed;
     public float maxSpeed;
 
     public float pushForce;
@@ -24,6 +26,7 @@ public class PlayerController : MonoBehaviour {
 
     public LayerMask animalLayerMask;
     public LayerMask ladderLayerMask;
+    public LayerMask deathLayerMask;
 
     private Player mPlayer;
     private CharacterController mCharCtrl;
@@ -49,12 +52,15 @@ public class PlayerController : MonoBehaviour {
 
     private ControllerColliderHit mLastHit;
     private bool mLastGrounded;
+    private bool mFacingLeft = false;
 
     //private HashSet<
+    public bool isFacingLeft { get { return mFacingLeft; } }
 
     public bool isGrounded { get { return mCharCtrl.isGrounded || mLastGrounded; } }
 
     public bool isOnLadder { get { return mLadderTriggers.Count > 0; } }
+    public bool isOnLadderJumping { get { return mIsLadderJumping; } }
 
     public bool inputEnabled {
         get { return mInputEnabled; }
@@ -98,6 +104,10 @@ public class PlayerController : MonoBehaviour {
         set {
             if(mCurVel != value) {
                 mCurVel = value;
+
+                if(mCurVel.y < -maxFallSpeed)
+                    mCurVel.y = -maxFallSpeed;
+
                 mCurSpeed = mCurVel.magnitude;
 
                 if(mCurSpeed > 0.0f) {
@@ -116,6 +126,8 @@ public class PlayerController : MonoBehaviour {
     public float curSpeed { get { return mCurSpeed; } }
 
     public int moveCount { get { return mNumMoves; } }
+
+    public Vector2 inputAxis { get { return mInputAxis; } }
 
     public void AddMove(Vector2 move) {
         if(mNumMoves < maxMoves) {
@@ -177,7 +189,15 @@ public class PlayerController : MonoBehaviour {
 
         mCharCtrl.detectCollisions = true;
 
-        Vector2 vel = mCurVel + velocityMod;
+        Vector2 vel = mCurVel;// +velocityMod;
+
+        vel.x += velocityMod.x;
+
+        if(vel.y < 0.0f && velocityMod.y > 0.0f)
+            vel.y = velocityMod.y;
+        else
+            vel.y += velocityMod.y;
+
         velocityMod = Vector2.zero;
 
         if(isOnLadder) {
@@ -293,16 +313,29 @@ public class PlayerController : MonoBehaviour {
         }
 
         curVel = vel;
+
+        if(vel.x != 0.0f || inputXVel != 0.0f)
+            mFacingLeft = vel.x < 0.0f || inputXVel < 0.0f;
     }
 
     void OnTriggerEnter(Collider col) {
         mLadderTriggers.Clear(); //refresh by stay callback
 
         //die
-        PlayerCollisionDeath death = col.GetComponent<PlayerCollisionDeath>();
-        if(death != null) {
-            player.state = Player.StateDead;
+        bool die = false;
+
+        if(((1 << col.gameObject.layer) & deathLayerMask) != 0) {
+            die = true;
         }
+        else {
+            PlayerCollisionDeath death = col.GetComponent<PlayerCollisionDeath>();
+            if(death != null) {
+                die = true;
+            }
+        }
+
+        if(die)
+            player.state = Player.StateDead;
         //if(
     }
 
@@ -321,6 +354,11 @@ public class PlayerController : MonoBehaviour {
 
         Rigidbody hitbody = hit.collider.rigidbody;
         GameObject hitGO = hit.gameObject;
+
+        if(((1 << hitGO.layer) & deathLayerMask) != 0) {
+            player.state = Player.StateDead;
+            return;
+        }
 
         PlayerCollisionBase collideInteract = hitGO.GetComponent<PlayerCollisionBase>();
 
@@ -406,6 +444,11 @@ public class PlayerController : MonoBehaviour {
                 mCurVel.y = jumpSpeed;
             }
         }
+        else if(dat.state == InputManager.State.Released) {
+            if(mCurVel.y > jumpCancelSpeed && !isGrounded) {
+                mCurVel.y = jumpCancelSpeed;
+            }
+        }
     }
 
     void OnInputSummonSelect(InputManager.Info dat) {
@@ -432,6 +475,7 @@ public class PlayerController : MonoBehaviour {
         switch(state) {
             case Player.StateNormal:
                 inputEnabled = true;
+                mCharCtrl.detectCollisions = true;
                 break;
 
             case Player.StateInvalid:
@@ -443,6 +487,8 @@ public class PlayerController : MonoBehaviour {
 
             case Player.StateDead:
                 inputEnabled = false;
+
+                mCharCtrl.detectCollisions = false;
 
                 //allow undo
                 Main.instance.input.AddButtonCall(0, InputAction.Undo, OnInputUndo);

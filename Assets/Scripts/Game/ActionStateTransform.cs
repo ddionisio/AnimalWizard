@@ -60,6 +60,9 @@ public class ActionStateTransform : MonoBehaviour, IActionStateListener {
     }
 	
 	public object ActionSave() {
+        if(!gameObject.activeSelf)
+            return null;
+
 		return new State(transform);
 	}
 	

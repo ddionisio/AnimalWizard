@@ -44,6 +44,10 @@ public class Player : EntityBase, IActionStateListener {
 
             player.state = mState;
 
+            //refresh hud
+            player.mHUD.RefreshSummons(player);
+            player.mHUD.RefreshCollection(player);
+
             if(player.restoreStateCallback != null)
                 player.restoreStateCallback(player);
         }
@@ -63,6 +67,8 @@ public class Player : EntityBase, IActionStateListener {
 
     private Animal mLastSummoning;
 
+    private int mCollected = 0;
+
     public static Player instance { get { return mInstance; } }
 
     public FollowCamera followCamera { get { return mFollowCamera; } }
@@ -72,6 +78,37 @@ public class Player : EntityBase, IActionStateListener {
     public int summonCurSelect { get { return mSummonCurSelect; } }
 
     public int summonCount { get { return LevelInfo.instance.summonItems.Length; } }
+
+    public int collected { get { return mCollected; } }
+
+    public void AddCollect() {
+        mCollected++;
+
+        mHUD.RefreshCollection(this);
+
+        //save progress
+        ActionStateManager.instance.Save();
+    }
+
+    public void RemoveCollect() {
+        mCollected--;
+
+        mHUD.RefreshCollection(this);
+    }
+
+    public void AddSummonCount(string type) {
+        LevelInfo level = LevelInfo.instance;
+        level.GetSummonItem(type).max++;
+
+        mHUD.RefreshSummons(this);
+    }
+
+    public void RemoveSummonCount(string type) {
+        LevelInfo level = LevelInfo.instance;
+        level.GetSummonItem(type).max--;
+
+        mHUD.RefreshSummons(this);
+    }
 
     public int SummonGetAvailableCount(int ind) {
         LevelInfo level = LevelInfo.instance;
@@ -151,8 +188,9 @@ public class Player : EntityBase, IActionStateListener {
             if(state == StateDead)
                 ActionStateManager.instance.RestoreLast(true);
         }
-        else
+        else {
             ActionStateManager.instance.RestoreLast();
+        }
     }
 
     void ClearData() {
@@ -189,12 +227,19 @@ public class Player : EntityBase, IActionStateListener {
             case StateNormal:
                 mFollowCamera.target = transform;
                 mFollowCamera.focusEnable = true;
+
+                if(mHUD.deathMessage != null)
+                    mHUD.deathMessage.SetActive(false);
                 break;
 
             case StateDead:
                 Debug.Log("dead");
+                SummonSetSelect(-1);
                 mFollowCamera.target = null;
                 mFollowCamera.focusEnable = false;
+
+                if(mHUD.deathMessage != null)
+                    mHUD.deathMessage.SetActive(true);
                 break;
         }
     }
@@ -221,7 +266,7 @@ public class Player : EntityBase, IActionStateListener {
             autoSpawnFinish = true;
 
             //initialize variables
-            GameObject camGO = GameObject.FindGameObjectWithTag("MainCamera");
+            GameObject camGO = GameObject.FindGameObjectWithTag("CameraController");
             mFollowCamera = camGO.GetComponent<FollowCamera>();
 
             GameObject hudGO = GameObject.FindGameObjectWithTag("HUD");

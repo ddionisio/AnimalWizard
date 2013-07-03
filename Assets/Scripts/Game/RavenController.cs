@@ -3,6 +3,8 @@ using System.Collections;
 
 public class RavenController : MonoBehaviour, IActionStateListener {
     public enum State {
+        Invalid,
+
         Standby,
         Move,
         Attached
@@ -25,7 +27,6 @@ public class RavenController : MonoBehaviour, IActionStateListener {
 
     private Vector3 mAttachLastLocalPos;
     private Quaternion mAttachLastLocalRot;
-
 
     void Awake() {
         mAnimal = GetComponent<Animal>();
@@ -152,7 +153,11 @@ public class RavenController : MonoBehaviour, IActionStateListener {
     }
 
     public object ActionSave() {
-        return mState;
+        if(gameObject.activeSelf) {
+            return mState;
+        }
+        else
+            return null;
     }
 
     public void ActionRestore(object dat) {
