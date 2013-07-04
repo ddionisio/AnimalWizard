@@ -19,8 +19,14 @@ public class Collectible : MonoBehaviour, IActionStateListener {
 
     private State mState = State.Active;
 
+    private bool mActiveWait = false;
+
     void OnTriggerEnter(Collider col) {
+        if(mActiveWait)
+            return;
+
         if(mState == State.Active) { //shouldn't get here if not active...
+
             Player player = col.GetComponent<Player>();
             if(player != null) {
                 mState = State.Collected;
@@ -82,12 +88,20 @@ public class Collectible : MonoBehaviour, IActionStateListener {
             switch(mState) {
                 case State.Collected:
                     gameObject.SetActive(false);
+                    mActiveWait = false;
+                    CancelInvoke();
                     break;
 
                 case State.Active:
                     gameObject.SetActive(true);
+                    mActiveWait = true;
+                    Invoke("ActiveWaitDelay", 0.2f);
                     break;
             }
         }
+    }
+
+    void ActiveWaitDelay() {
+        mActiveWait = false;
     }
 }

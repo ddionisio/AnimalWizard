@@ -1,6 +1,7 @@
 using UnityEngine;
 using System.Collections;
 using System.Collections.Generic;
+using HutongGames.PlayMaker;
 
 public class PlayerController : MonoBehaviour {
     public const int maxMoves = 10;
@@ -24,9 +25,12 @@ public class PlayerController : MonoBehaviour {
     public float dropPlatformDelay;
     public LayerMask dropPlatformMask;
 
+    public float interactDelay;
+
     public LayerMask animalLayerMask;
     public LayerMask ladderLayerMask;
     public LayerMask deathLayerMask;
+    public LayerMask interactLayerMask;
 
     private Player mPlayer;
     private CharacterController mCharCtrl;
@@ -47,12 +51,15 @@ public class PlayerController : MonoBehaviour {
     public Vector2 velocityMod; //fill this up during collisions and triggers, will be added to curVel during move and reset afterwards
 
     private float mLastInputYUpTime;
+    private float mLastInputYDownTime;
 
     private Animal mAnimalCancel; //use for unsummoning an animal
 
     private ControllerColliderHit mLastHit;
     private bool mLastGrounded;
     private bool mFacingLeft = false;
+
+    private PlayMakerFSM mInteractFSM;
 
     //private HashSet<
     public bool isFacingLeft { get { return mFacingLeft; } }
@@ -169,13 +176,28 @@ public class PlayerController : MonoBehaviour {
             mInputAxis.y = input.GetAxis(0, InputAction.DirY);
 
             if(mInputAxis.y < 0.0f && isGrounded && mLastHit != null && ((1 << mLastHit.gameObject.layer) & dropPlatformMask) != 0) {
-                if(Time.fixedTime - mLastInputYUpTime >= dropPlatformDelay) {
+                if(Time.fixedTime - mLastInputYDownTime >= dropPlatformDelay) {
                     pos.y -= mCharCtrl.stepOffset;
                     mCharCtrl.detectCollisions = false;
                     transform.position = pos;
 
-                    mLastInputYUpTime = Time.fixedTime;
+                    mLastInputYDownTime = Time.fixedTime;
 
+                    return;
+                }
+            }
+            else {
+                mLastInputYDownTime = Time.fixedTime;
+            }
+
+            if(mInputAxis.y > 0.0f && mPlayer.isInteract) {
+                if(Time.fixedTime - mLastInputYUpTime >= interactDelay) {
+                    //interact
+                    if(mInteractFSM != null) {
+                        mInteractFSM.SendEvent(EntityEvent.TriggerAct);
+                    }
+
+                    mLastInputYUpTime = Time.fixedTime;
                     return;
                 }
             }
@@ -336,6 +358,14 @@ public class PlayerController : MonoBehaviour {
 
         if(die)
             player.state = Player.StateDead;
+        else if(((1 << col.gameObject.layer) & interactLayerMask) != 0) {
+            //interact?
+            PlayMakerFSM fsm = col.GetComponent<PlayMakerFSM>();
+            if(fsm != null) {
+                mPlayer.isInteract = true;
+                mInteractFSM = fsm;
+            }
+        }
         //if(
     }
 
@@ -345,6 +375,13 @@ public class PlayerController : MonoBehaviour {
     }
 
     void OnTriggerExit(Collider col) {
+        if(((1 << col.gameObject.layer) & interactLayerMask) != 0) {
+            if(mInteractFSM != null && mInteractFSM.gameObject == col.gameObject) {
+                mPlayer.isInteract = false;
+                mInteractFSM = null;
+            }
+        }
+
         if(((1 << col.gameObject.layer) & ladderLayerMask) != 0)
             mLadderTriggers.Remove(col);
     }
@@ -405,7 +442,7 @@ public class PlayerController : MonoBehaviour {
             if(mPlayer.summonCurSelect != -1) {
                 mPlayer.SummonCurrent();
 
-                if(mPlayer.SummonGetAvailableCount(mPlayer.summonCurSelect) == 0)
+                //if(mPlayer.SummonGetAvailableCount(mPlayer.summonCurSelect) == 0)
                     mPlayer.SummonSetSelect(-1);
             }
             else {
@@ -472,6 +509,12 @@ public class PlayerController : MonoBehaviour {
     #endregion
 
     void OnPlayerSetState(EntityBase ent, int state) {
+        switch(ent.prevState) {
+            case Player.StateDead:
+                Main.instance.input.RemoveButtonCall(0, InputAction.Undo, OnInputUndo);
+                break;
+        }
+
         switch(state) {
             case Player.StateNormal:
                 inputEnabled = true;
@@ -479,15 +522,12 @@ public class PlayerController : MonoBehaviour {
                 break;
 
             case Player.StateInvalid:
-                if(!inputEnabled && ent.prevState == Player.StateDead)
-                    Main.instance.input.RemoveButtonCall(0, InputAction.Undo, OnInputUndo);
-
+            case Player.StateVictory:
                 inputEnabled = false;
                 break;
 
             case Player.StateDead:
                 inputEnabled = false;
-
                 mCharCtrl.detectCollisions = false;
 
                 //allow undo
@@ -502,7 +542,9 @@ public class PlayerController : MonoBehaviour {
         mNumMoves = 0;
         mLadderTriggers.Clear();
         mLastHit = null;
-        mLastInputYUpTime = Time.fixedTime;
+        mLastInputYDownTime = mLastInputYUpTime = Time.fixedTime;
+        mInteractFSM = null;
+        mPlayer.isInteract = false;
     }
 
     private CollisionFlags GetCollisionFlagsFromHit(ControllerColliderHit hit) {
@@ -524,5 +566,29 @@ public class PlayerController : MonoBehaviour {
         //if(
 
         return ret;
+    }
+
+    void OnUIModalActive() {
+        switch(mPlayer.state) {
+            case Player.StateNormal:
+                inputEnabled = false;
+                break;
+
+            case Player.StateDead:
+                Main.instance.input.RemoveButtonCall(0, InputAction.Undo, OnInputUndo);
+                break;
+        }
+    }
+
+    void OnUIModalInactive() {
+        switch(mPlayer.state) {
+            case Player.StateNormal:
+                inputEnabled = true;
+                break;
+
+            case Player.StateDead:
+                Main.instance.input.AddButtonCall(0, InputAction.Undo, OnInputUndo);
+                break;
+        }
     }
 }

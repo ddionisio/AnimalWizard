@@ -73,6 +73,13 @@ public class AnimalSummon : MonoBehaviour {
         return animal;
     }
 
+    public void ChangeCapacity(string type, int max) {
+        int capacityCount = mPool.CapacityCount(type);
+        if(capacityCount < max) {
+            mPool.Expand(type, max - capacityCount);
+        }
+    }
+
     void OnDestroy() {
         if(mInstance == this)
             mInstance = null;
@@ -100,7 +107,8 @@ public class AnimalSummon : MonoBehaviour {
         //animal pool init
         LevelInfo level = LevelInfo.instance;
         foreach(LevelInfo.SummonItem dat in level.summonItems) {
-            mPool.Expand(dat.type, dat.max);
+            if(dat.max > mPool.CapacityCount(dat.type))
+                mPool.Expand(dat.type, dat.max);
         }
     }
 }

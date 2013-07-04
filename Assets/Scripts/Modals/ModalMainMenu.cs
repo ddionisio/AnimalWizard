@@ -26,12 +26,14 @@ public class ModalMainMenu : UIController {
     }
 
     void OnPlay(GameObject go) {
-        Main.instance.sceneManager.LoadScene("levelSelect");
+        Main.instance.sceneManager.LoadScene(LevelList.sceneLevelSelect);
     }
 
     void OnOptions(GameObject go) {
+        UIModalManager.instance.ModalOpen("options");
     }
 
     void OnCredits(GameObject go) {
+        UIModalManager.instance.ModalOpen("credits");
     }
 }

@@ -7,9 +7,21 @@ public class RhinoController : PlayerCollisionBase, IActionStateListener {
     public float turnMoveableAngle = 45.0f; //angle from up vector, if angle bet. up and normal is greater, then we turn
     public LayerMask turnMask; //layers that will make the rhino move the opposite direction if blocked
 
+    public tk2dBaseSprite sprite;
+
     private Animal mAnimal;
     private ConstantForce mForce;
     private float mXDir;
+    private int mCollisionCount = 0;
+
+    private bool mStarted = false;
+
+    void OnDisable() {
+        if(mStarted) {
+            mForce.force = Vector3.zero;
+            mCollisionCount = 0;
+        }
+    }
 
     protected override void Awake() {
         base.Awake();
@@ -22,7 +34,17 @@ public class RhinoController : PlayerCollisionBase, IActionStateListener {
 
     // Use this for initialization
     void Start() {
+        mStarted = true;
+    }
 
+    void OnCollisionEnter(Collision col) {
+        mCollisionCount += col.contacts.Length;
+
+        if(mForce.force == Vector3.zero) {
+            Player player = Player.instance;
+            mXDir = Mathf.Sign(transform.position.x - player.transform.position.x);
+            mForce.force = new Vector3(mXDir * moveForce, 0.0f, 0.0f);
+        }
     }
 
     void OnCollisionStay(Collision col) {
@@ -47,6 +69,15 @@ public class RhinoController : PlayerCollisionBase, IActionStateListener {
         }
     }
 
+    void OnCollisionExit(Collision col) {
+        mCollisionCount -= col.contacts.Length;
+
+        if(mCollisionCount <= 0) {
+            mCollisionCount = 0;
+            mForce.force = Vector3.zero;
+        }
+    }
+
     public override void PlayerCollide(PlayerController pc, CollisionFlags flags, ControllerColliderHit hit) {
         if((flags & CollisionFlags.Sides) != CollisionFlags.None) {
             rigidbody.velocity = Vector3.zero;
@@ -59,12 +90,13 @@ public class RhinoController : PlayerCollisionBase, IActionStateListener {
         switch(state) {
             case Animal.StateSpawning:
             case Animal.StateDespawning:
+            case Animal.StateNormal:
                 mForce.force = new Vector3(0.0f, 0.0f, 0.0f);
                 break;
 
-            case Animal.StateNormal:
-                mForce.force = new Vector3(mXDir * moveForce, 0.0f, 0.0f);
-                break;
+            //case Animal.StateNormal:
+               // mForce.force = new Vector3(mXDir * moveForce, 0.0f, 0.0f);
+                //break;
         }
     }
 
@@ -87,5 +119,10 @@ public class RhinoController : PlayerCollisionBase, IActionStateListener {
     public void ActionRestore(object dat) {
         mXDir = (float)dat;
         mForce.force = new Vector3(mXDir * moveForce, 0.0f, 0.0f);
+    }
+
+    void Update() {
+        if(mXDir != 0.0f)
+            sprite.FlipX = mXDir < 0.0f;
     }
 }

@@ -68,6 +68,10 @@ public class PlayerSpriteController : MonoBehaviour {
             case Player.StateDead:
                 anim.Play(mClips[(int)State.dead]);
                 break;
+
+            case Player.StateVictory:
+                anim.Play(mClips[(int)State.idle]);
+                break;
         }
     }
 }

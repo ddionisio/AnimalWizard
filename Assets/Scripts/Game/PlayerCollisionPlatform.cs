@@ -41,10 +41,15 @@ public class PlayerCollisionPlatform : PlayerCollisionBase, IActionStateListener
             bool doReverse = false;
 
             foreach(ContactPoint contact in col.contacts) {
-                if(Mathf.Abs(Mathf.Acos(Vector3.Dot(contact.normal, mWPMover.dir))) > Mathf.PI * 0.5f) {
+                if((contact.otherCollider.rigidbody == null || contact.otherCollider.rigidbody.isKinematic || contact.otherCollider.rigidbody.velocity == Vector3.zero) 
+                    && Mathf.Abs(Mathf.Acos(Vector3.Dot(contact.normal, mWPMover.dir))) > Mathf.PI * 0.5f) {
                     doReverse = true;
                     break;
                 }
+                /*else if(Mathf.Abs(Mathf.Acos(Vector3.Dot(contact.otherCollider.rigidbody.velocity.normalized, mWPMover.dir))) > Mathf.PI * 0.5f) {
+                    doReverse = true;
+                    break;
+                }*/
             }
 
             if(doReverse)

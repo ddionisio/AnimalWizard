@@ -5,6 +5,7 @@ using System.Collections.Generic;
 public class Player : EntityBase, IActionStateListener {
     public const int StateNormal = 1;
     public const int StateDead = 2;
+    public const int StateVictory = 3;
 
     public delegate void GenericCallback(Player player);
 
@@ -53,6 +54,8 @@ public class Player : EntityBase, IActionStateListener {
         }
     }
 
+    public GameObject interactIcon;
+
     public event GenericCallback restoreStateCallback;
 
     private static Player mInstance;
@@ -81,6 +84,8 @@ public class Player : EntityBase, IActionStateListener {
 
     public int collected { get { return mCollected; } }
 
+    public bool isInteract { get { return interactIcon.activeSelf; } set { interactIcon.SetActive(value); } }
+
     public void AddCollect() {
         mCollected++;
 
@@ -98,9 +103,12 @@ public class Player : EntityBase, IActionStateListener {
 
     public void AddSummonCount(string type) {
         LevelInfo level = LevelInfo.instance;
-        level.GetSummonItem(type).max++;
+        LevelInfo.SummonItem item = level.GetSummonItem(type);
+        item.max++;
 
         mHUD.RefreshSummons(this);
+
+        AnimalSummon.instance.ChangeCapacity(type, item.max);
     }
 
     public void RemoveSummonCount(string type) {
@@ -194,6 +202,8 @@ public class Player : EntityBase, IActionStateListener {
     }
 
     void ClearData() {
+        SetInput(false);
+
         state = StateInvalid;
 
         //reset stuff here
@@ -232,6 +242,10 @@ public class Player : EntityBase, IActionStateListener {
                     mHUD.deathMessage.SetActive(false);
                 break;
 
+            case StateVictory:
+                SummonSetSelect(-1);
+                break;
+
             case StateDead:
                 Debug.Log("dead");
                 SummonSetSelect(-1);
@@ -255,6 +269,7 @@ public class Player : EntityBase, IActionStateListener {
 
     protected override void SpawnStart() {
         //initialize some things
+        SetInput(true);
     }
 
     protected override void Awake() {
@@ -272,6 +287,8 @@ public class Player : EntityBase, IActionStateListener {
             GameObject hudGO = GameObject.FindGameObjectWithTag("HUD");
             mHUD = hudGO.GetComponent<HUD>();
         }
+
+        interactIcon.SetActive(false);
     }
 
     // Use this for initialization
@@ -342,5 +359,35 @@ public class Player : EntityBase, IActionStateListener {
 
     public void ActionRestore(object dat) {
         ((ActionState)dat).Restore(this);
+    }
+
+    void OnInputMenu(InputManager.Info dat) {
+        if(dat.state == InputManager.State.Pressed) {
+            if(!UIModalManager.instance.ModalIsInStack("pause")) {
+                SetInput(false);
+                UIModalManager.instance.ModalOpen("pause");
+            }
+        }
+    }
+
+    void OnUIModalActive() {
+        //SetInput(false);
+    }
+
+    void OnUIModalInactive() {
+        SetInput(true);
+    }
+
+    private void SetInput(bool set) {
+        InputManager input = Main.instance != null ? Main.instance.input : null;
+
+        if(input != null) {
+            if(set) {
+                input.AddButtonCall(0, InputAction.Menu, OnInputMenu);
+            }
+            else {
+                input.RemoveButtonCall(0, InputAction.Menu, OnInputMenu);
+            }
+        }
     }
 }

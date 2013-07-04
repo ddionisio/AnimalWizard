@@ -14,6 +14,8 @@ public class RavenController : MonoBehaviour, IActionStateListener {
     public tk2dBaseSprite sprite;
     public Collider subCollider;
 
+    public ParticleSystem particles;
+
     private LayerMask mCollideMask;
 
     private Vector2 mDir;
@@ -78,6 +80,8 @@ public class RavenController : MonoBehaviour, IActionStateListener {
                     mState = State.Attached;
 
                     subCollider.isTrigger = false;
+
+                    particles.Stop();
                 }
                 else {
                     movePos.x += mDir.x * dist;
@@ -113,6 +117,8 @@ public class RavenController : MonoBehaviour, IActionStateListener {
         transform.position = cursor.spritePos;
 
         ApplyDir();
+
+        particles.Play();
     }
 
     void ApplyDir() {
@@ -133,6 +139,8 @@ public class RavenController : MonoBehaviour, IActionStateListener {
         subCollider.isTrigger = true;
         mState = State.Standby;
         sprite.FlipY = false;
+
+        particles.Stop();
     }
 
     void OnAnimalSetState(EntityBase ent, int state) {
@@ -162,5 +170,8 @@ public class RavenController : MonoBehaviour, IActionStateListener {
 
     public void ActionRestore(object dat) {
         mState = (State)dat;
+
+        if(mState == State.Move)
+            particles.Play();
     }
 }

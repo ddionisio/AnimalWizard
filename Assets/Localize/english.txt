@@ -3,4 +3,28 @@
 		"key":"title",
 		"text":"UNKNOWN"
 	},
+	{
+		"key":"test0",
+		"text":"Fuckity fuck fuck"
+	},
+	{
+		"key":"sign_jump0",
+		"text":"Hey there! Welcome to Animal Wizard! Press SPACE to jump up! Have fun! <3"
+	},
+	{
+		"key":"sign_elephant0",
+		"text":"Collect the elephant trinket next to this sign to summon awesomeness."
+	},
+	{
+		"key":"sign_elephant1",
+		"text":"To summon the elephant, press '1'. Then use your mouse cursor to where you want to summon. If it's all good, left click with your mouse to summon!"
+	},
+	{
+		"key":"sign_elephant2",
+		"text":"If you screwed up, press Z to undo your last summon. Cheers! <3"
+	},
+	{
+		"key":"sign_warning0",
+		"text":"Don't fall! If you do, just press Z to undo death. Man, I wish I can do that in real life!"
+	},
 ]

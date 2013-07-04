@@ -1,8 +1,9 @@
 {
 	"lockedString":"????????",
     "unlockStringFormat":"{0} - {1}",
-    "completeStringFormat":"<3{0} - {1}<3",
+    "completeStringFormat":"<3 {0} - {1} <3",
 	"items":[
-		{ "title":"The Basics", "cutscene":"" },
+		{ "title":"Welcome!", "cutscene":"" },
+		{ "title":"Animalism, Ho!", "cutscene":"" },
 	]
 }

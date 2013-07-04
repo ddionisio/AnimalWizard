@@ -6,6 +6,8 @@ public class ModalLevelSelect : UIController {
 
     public Transform levelItemHolder;
 
+    public UIEventListener options;
+
     private UIGrid mLevelItemGrid;
 
     protected override void OnActive(bool active) {
@@ -62,6 +64,8 @@ public class ModalLevelSelect : UIController {
         }
 
         mLevelItemGrid.repositionNow = true;
+
+        options.onClick += OnOptionsClick;
     }
 
     // Update is called once per frame
@@ -72,18 +76,10 @@ public class ModalLevelSelect : UIController {
     void OnLevelClick(GameObject go) {
         int levelInd = int.Parse(go.name);
 
-        SceneState.instance.SetValue(LevelList.levelSceneStateKey, levelInd, false);
+        LevelList.instance.LoadLevel(levelInd);
+    }
 
-        //Debug.Log("level: " + levelInd);
-        string cutscene = LevelList.instance.GetLevelCutscene(levelInd);
-                
-        if(!string.IsNullOrEmpty(cutscene)) {
-            Main.instance.sceneManager.LoadScene(cutscene);
-            //cutscene should load the level after its done
-        }
-        else {
-            //go straight to play
-            Main.instance.sceneManager.LoadLevel(levelInd);
-        }
+    void OnOptionsClick(GameObject go) {
+        UIModalManager.instance.ModalOpen("options");
     }
 }

@@ -10,7 +10,7 @@ public class HUDSummonItem : MonoBehaviour {
     public Color activeColor = Color.white;
     public Color inactiveColor = new Color(0.5f, 0.5f, 0.5f, 0.5f);
 
-    private int mCurCount = 0;
+    private int mCurCount = -1;
 
     public void Init(int ind, LevelInfo.SummonItem summonInfo) {
         icon.spriteName = summonInfo.type + "_icon";
