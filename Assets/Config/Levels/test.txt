@@ -1,9 +1,9 @@
 {
 	"summons":[
-		{ "type":"elephant", "max":5 },
-		{ "type":"duck", "max":5 },
-		{ "type":"rhino", "max":5 },
-		{ "type":"raven", "max":5 },
-		{ "type":"monkey", "max":5 },
+		{ "type":"elephant", "max":10 },
+		{ "type":"duck", "max":10 },
+		{ "type":"rhino", "max":10 },
+		{ "type":"raven", "max":10 },
+		{ "type":"monkey", "max":10 },
 	]
 }

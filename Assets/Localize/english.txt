@@ -27,4 +27,16 @@
 		"key":"sign_warning0",
 		"text":"Don't fall! If you do, just press Z to undo death. Man, I wish I can do that in real life!"
 	},
+	{
+		"key":"sign_duck0",
+		"text":"Summon ducks to cross chasms! Collect the duck trinket and press '2'. That's so quacked!"
+	},
+	{
+		"key":"sign_switch0",
+		"text":"Down below is a switch. You could push it yourself, but you'll get stuck. Use an elephant to push it for you!"
+	},
+	{
+		"key":"sign_secret0",
+		"text":"<insert secret here>"
+	},
 ]

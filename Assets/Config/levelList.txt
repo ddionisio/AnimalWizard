@@ -4,6 +4,10 @@
     "completeStringFormat":"<3 {0} - {1} <3",
 	"items":[
 		{ "title":"Welcome!", "cutscene":"" },
+		{ "title":"Quackin'", "cutscene":"" },
+		{ "title":"Ridin' Rhino", "cutscene":"" },
+		{ "title":"Drunken Stupor", "cutscene":"" },
+		{ "title":"Not Monkey", "cutscene":"" },
 		{ "title":"Animalism, Ho!", "cutscene":"" },
 	]
 }

@@ -1,0 +1,6 @@
+{
+	"summons":[
+		{ "type":"elephant", "max":3 },
+		{ "type":"duck", "max":0 },
+	]
+}
