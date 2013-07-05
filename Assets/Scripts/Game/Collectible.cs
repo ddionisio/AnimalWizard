@@ -29,6 +29,8 @@ public class Collectible : MonoBehaviour, IActionStateListener {
 
             Player player = col.GetComponent<Player>();
             if(player != null) {
+                SoundPlayerGlobal.instance.Play("collect");
+
                 mState = State.Collected;
                 gameObject.SetActive(false);
                 

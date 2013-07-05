@@ -30,6 +30,8 @@ public class HUD : MonoBehaviour {
         if(goalActive) {
             LevelInfo level = LevelInfo.instance;
             goalPointer.SetPOI(level.goal);
+
+            SoundPlayerGlobal.instance.Play("exit");
         }
         else {
             goalPointer.SetPOI(null);

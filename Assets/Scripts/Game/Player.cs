@@ -248,6 +248,9 @@ public class Player : EntityBase, IActionStateListener {
 
             case StateDead:
                 Debug.Log("dead");
+
+                SoundPlayerGlobal.instance.Play("death");
+
                 SummonSetSelect(-1);
                 mFollowCamera.target = null;
                 mFollowCamera.focusEnable = false;

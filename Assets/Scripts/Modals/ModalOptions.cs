@@ -7,6 +7,8 @@ public class ModalOptions : UIController {
     public UISlider music;
     public UISlider sound;
 
+    private bool mPlayingSound = false;
+
     protected override void OnActive(bool active) {
         if(active) {
             back.onClick = OnBackClick;
@@ -21,8 +23,12 @@ public class ModalOptions : UIController {
     }
 
     protected override void OnOpen() {
+        mPlayingSound = true;
+
         music.sliderValue = Main.instance.userSettings.musicVolume;
         sound.sliderValue = Main.instance.userSettings.soundVolume;
+
+        mPlayingSound = false;
     }
 
     protected override void OnClose() {
@@ -37,9 +43,22 @@ public class ModalOptions : UIController {
 
     void OnSoundValueChange(float val) {
         Main.instance.userSettings.soundVolume = val;
+
+        if(!mPlayingSound)
+            StartCoroutine(DelaySound());
     }
 
     void OnMusicValueChange(float val) {
         Main.instance.userSettings.musicVolume = val;
+    }
+
+    IEnumerator DelaySound() {
+        mPlayingSound = true;
+
+        yield return new WaitForSeconds(0.5f);
+
+        SoundPlayerGlobal.instance.Play("click");
+
+        mPlayingSound = false;
     }
 }

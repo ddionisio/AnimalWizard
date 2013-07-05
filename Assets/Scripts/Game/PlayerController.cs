@@ -440,6 +440,8 @@ public class PlayerController : MonoBehaviour {
     void OnInputAction(InputManager.Info dat) {
         if(dat.state == InputManager.State.Pressed) {
             if(mPlayer.summonCurSelect != -1) {
+                SoundPlayerGlobal.instance.Play("summon");
+
                 mPlayer.SummonCurrent();
 
                 //if(mPlayer.SummonGetAvailableCount(mPlayer.summonCurSelect) == 0)
@@ -479,6 +481,8 @@ public class PlayerController : MonoBehaviour {
             if(isGrounded || isOnLadder) {
                 mIsLadderJumping = isOnLadder;    
                 mCurVel.y = jumpSpeed;
+
+                SoundPlayerGlobal.instance.Play("jump");
             }
         }
         else if(dat.state == InputManager.State.Released) {
@@ -490,6 +494,8 @@ public class PlayerController : MonoBehaviour {
 
     void OnInputSummonSelect(InputManager.Info dat) {
         if(dat.state == InputManager.State.Pressed) {
+            //SoundPlayerGlobal.instance.Play("click");
+
             if(mPlayer.summonCurSelect == dat.index || mPlayer.summonCount <= dat.index) {
                 mPlayer.SummonSetSelect(-1);
             }
