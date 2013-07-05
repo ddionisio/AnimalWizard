@@ -7,7 +7,7 @@
 		{ "title":"Quackin'", "cutscene":"" },
 		{ "title":"Ridin' Rhino", "cutscene":"" },
 		{ "title":"Drunken Stupor", "cutscene":"" },
-		{ "title":"Not Monkey", "cutscene":"" },
+		{ "title":"Monkey Climbing", "cutscene":"" },
 		{ "title":"Animalism, Ho!", "cutscene":"" },
 	]
 }

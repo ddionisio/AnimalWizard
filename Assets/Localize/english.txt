@@ -39,4 +39,16 @@
 		"key":"sign_secret0",
 		"text":"<insert secret here>"
 	},
+	{
+		"key":"sign_rhino0",
+		"text":"Summon rhino to ride across. Press '3' to select the rhino. Riding rhinos is pretty badass! Try it!"
+	},
+	{
+		"key":"sign_raven0",
+		"text":"Shoot ravens to climb up. Press '4' to select the raven and aim with your mouse to designate their flight."
+	},
+	{
+		"key":"sign_monkey0",
+		"text":"Use these critters as ladders. Press '5' to select and place with your mouse. Reach for the skies! By the way they are called Tarsiers."
+	},
 ]

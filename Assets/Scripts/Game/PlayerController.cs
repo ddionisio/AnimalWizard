@@ -511,7 +511,8 @@ public class PlayerController : MonoBehaviour {
     void OnPlayerSetState(EntityBase ent, int state) {
         switch(ent.prevState) {
             case Player.StateDead:
-                Main.instance.input.RemoveButtonCall(0, InputAction.Undo, OnInputUndo);
+                if(Main.instance.input != null)
+                    Main.instance.input.RemoveButtonCall(0, InputAction.Undo, OnInputUndo);
                 break;
         }
 

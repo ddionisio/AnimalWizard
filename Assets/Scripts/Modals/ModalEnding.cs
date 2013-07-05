@@ -23,6 +23,6 @@ public class ModalEnding : UIController {
     }
 
     void OnClick(GameObject go) {
-        Main.instance.sceneManager.LoadScene(Main.instance.startScene);
+        Main.instance.sceneManager.LoadScene("start");
     }
 }

@@ -9,6 +9,8 @@ public class RhinoController : PlayerCollisionBase, IActionStateListener {
 
     public tk2dBaseSprite sprite;
 
+    public float upForce;
+
     private Animal mAnimal;
     private ConstantForce mForce;
     private float mXDir;
@@ -43,7 +45,7 @@ public class RhinoController : PlayerCollisionBase, IActionStateListener {
         if(mForce.force == Vector3.zero) {
             Player player = Player.instance;
             mXDir = Mathf.Sign(transform.position.x - player.transform.position.x);
-            mForce.force = new Vector3(mXDir * moveForce, 0.0f, 0.0f);
+            mForce.force = new Vector3(mXDir * moveForce, upForce, 0.0f);
         }
     }
 
@@ -63,9 +65,11 @@ public class RhinoController : PlayerCollisionBase, IActionStateListener {
         }
 
         if(doOpposite) {
-            rigidbody.velocity = Vector3.zero;
+            Vector3 vel = rigidbody.velocity;
+            vel.x = 0.0f;
+            rigidbody.velocity = vel;
             mXDir *= -1.0f;
-            mForce.force = new Vector3(mXDir * moveForce, 0.0f, 0.0f);
+            mForce.force = new Vector3(mXDir * moveForce, upForce, 0.0f);
         }
     }
 
@@ -82,7 +86,7 @@ public class RhinoController : PlayerCollisionBase, IActionStateListener {
         if((flags & CollisionFlags.Sides) != CollisionFlags.None) {
             rigidbody.velocity = Vector3.zero;
             mXDir = Mathf.Sign(transform.position.x - pc.transform.position.x);
-            mForce.force = new Vector3(mXDir * moveForce, 0.0f, 0.0f);
+            mForce.force = new Vector3(mXDir * moveForce, upForce, 0.0f);
         }
     }
 
@@ -118,7 +122,7 @@ public class RhinoController : PlayerCollisionBase, IActionStateListener {
 
     public void ActionRestore(object dat) {
         mXDir = (float)dat;
-        mForce.force = new Vector3(mXDir * moveForce, 0.0f, 0.0f);
+        mForce.force = new Vector3(mXDir * moveForce, upForce, 0.0f);
     }
 
     void Update() {
