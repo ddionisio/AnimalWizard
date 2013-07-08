@@ -3,7 +3,7 @@ using System.Collections;
 
 public class FollowCamera : MonoBehaviour {
 
-    public Camera mainCamera;
+    public tk2dCamera mainCamera;
 
     [SerializeField]
     Transform focus; //camera to mouse, relative to target
@@ -14,7 +14,8 @@ public class FollowCamera : MonoBehaviour {
     public float focusMaxDistance = 5.0f;
     public float delay = 0.1f;
 
-    public Rect bounds;
+    [System.NonSerialized]
+    public Bounds bounds;
 
     private Transform mTarget;
     private bool mFocusEnable;
@@ -86,10 +87,10 @@ public class FollowCamera : MonoBehaviour {
                 //TODO: find a better way to do this
                 Vector3 lastCamPos = mainCamera.transform.position;
                 mainCamera.transform.position = mTarget.position;
-                focus.position = mainCamera.ScreenToWorldPoint(Input.mousePosition);
+                focus.position = mainCamera.ScreenCamera.ScreenToWorldPoint(Input.mousePosition);
                 mainCamera.transform.position = lastCamPos;
 
-                Vector3 mousePos = mainCamera.ScreenToWorldPoint(Input.mousePosition);
+                Vector3 mousePos = mainCamera.ScreenCamera.ScreenToWorldPoint(Input.mousePosition);
                 focusCursor.position = new Vector3(mousePos.x, mousePos.y, focusCursor.position.z);
 
                 Vector2 dFocus = focus.position - mTarget.position;
@@ -136,8 +137,8 @@ public class FollowCamera : MonoBehaviour {
     }
 
     private void ApplyPos(Vector3 pos) {
-        if(bounds.width > 0.0f && bounds.height > 0.0f) {
-            float camWidthRatio = mainCamera.pixelWidth / mainCamera.pixelHeight;
+        if(bounds.size.x > 0.0f && bounds.size.y > 0.0f) {
+            /*float camWidthRatio = mainCamera.ScreenExtents / mainCamera.pixelHeight;
             float camHalfWidth = mainCamera.orthographicSize * camWidthRatio;
             float camHalfHeight = mainCamera.orthographicSize;
 
@@ -160,6 +161,20 @@ public class FollowCamera : MonoBehaviour {
             else if(pos.y + camHalfHeight > boundBot + hBoundH) {
                 pos.y = boundBot + hBoundH - camHalfHeight;
             }
+        }
+
+        */
+            Rect screen = mainCamera.ScreenExtents;
+
+            if(pos.x - screen.width * 0.5f < bounds.min.x)
+                pos.x = bounds.min.x + screen.width * 0.5f;
+            else if(pos.x + screen.width * 0.5f > bounds.max.x)
+                pos.x = bounds.max.x - screen.width * 0.5f;
+
+            if(pos.y - screen.height * 0.5f < bounds.min.y)
+                pos.y = bounds.min.y + screen.height * 0.5f;
+            else if(pos.y + screen.height * 0.5f > bounds.max.y)
+                pos.y = bounds.max.y - screen.height * 0.5f;
         }
 
         transform.position = pos;

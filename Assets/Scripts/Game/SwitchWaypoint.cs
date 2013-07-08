@@ -5,8 +5,8 @@ public class SwitchWaypoint : SwitchBase {
     public enum Action {
         None,
         Flip,
-        Active,
-        Inactive
+        True,
+        False
     }
 
     public WaypointMover mover;
@@ -34,11 +34,11 @@ public class SwitchWaypoint : SwitchBase {
                 mover.pause = !mover.pause;
                 break;
 
-            case Action.Active:
+            case Action.True:
                 mover.pause = state == State.on ? true : false;
                 break;
 
-            case Action.Inactive:
+            case Action.False:
                 mover.pause = state == State.on ? false : true;
                 break;
         }
@@ -48,11 +48,11 @@ public class SwitchWaypoint : SwitchBase {
                 mover.reverse = !mover.reverse;
                 break;
 
-            case Action.Active:
+            case Action.True:
                 mover.reverse = state == State.on ? true : false;
                 break;
 
-            case Action.Inactive:
+            case Action.False:
                 mover.reverse = state == State.on ? false : true;
                 break;
         }

@@ -77,6 +77,10 @@ public class RhinoController : PlayerCollisionBase, IActionStateListener {
         mCollisionCount -= col.contacts.Length;
 
         if(mCollisionCount <= 0) {
+            Vector3 vel = rigidbody.velocity;
+            vel.y = 0.0f;
+            rigidbody.velocity = vel;
+
             mCollisionCount = 0;
             mForce.force = Vector3.zero;
         }

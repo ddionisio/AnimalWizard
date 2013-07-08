@@ -244,6 +244,8 @@ public class Player : EntityBase, IActionStateListener {
 
             case StateVictory:
                 SummonSetSelect(-1);
+                mFollowCamera.target = null;
+                mFollowCamera.focusEnable = false;
                 break;
 
             case StateDead:
@@ -302,7 +304,8 @@ public class Player : EntityBase, IActionStateListener {
         LevelInfo level = LevelInfo.instance;
 
         //level bounds
-        mFollowCamera.bounds = level.bounds;
+        mFollowCamera.bounds = level.levelBounds;
+        //mFollowCamera.bounds = level.bounds;
 
         //initialize summon container
         int maxSummonable = 0;
@@ -375,10 +378,16 @@ public class Player : EntityBase, IActionStateListener {
 
     void OnUIModalActive() {
         //SetInput(false);
+
+        mFollowCamera.target = null;
+        mFollowCamera.focusEnable = false;
     }
 
     void OnUIModalInactive() {
         SetInput(true);
+
+        mFollowCamera.target = transform;
+        mFollowCamera.focusEnable = true;
     }
 
     private void SetInput(bool set) {

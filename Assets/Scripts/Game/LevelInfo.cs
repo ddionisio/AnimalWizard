@@ -18,21 +18,34 @@ public class LevelInfo : MonoBehaviour {
 
     public TextAsset file;
 
-    public Rect bounds;
-
     public Transform totemHolder;
 
     public Transform goal;
 
     private static LevelInfo mInstance;
 
+    private tk2dTileMap mTileMap;
+
     private SummonItem[] mSummonItems;
 
     public static LevelInfo instance { get { return mInstance; } }
 
+    public tk2dTileMap tileMap { get { return mTileMap; } }
+
     public int totemCount { get { return totemHolder != null ? totemHolder.childCount : 0; } }
 
     public SummonItem[] summonItems { get { return mSummonItems; } }
+
+    public Bounds levelBounds {
+        get {
+            float boundW = mTileMap.width * mTileMap.data.tileSize.x;
+            float boundH = mTileMap.height * mTileMap.data.tileSize.y;
+
+            return new Bounds(
+                new Vector3(mTileMap.data.tileOrigin.x + boundW * 0.5f, mTileMap.data.tileOrigin.y + boundH * 0.5f),
+                new Vector3(boundW, boundH));
+        }
+    }
 
     public SummonItem GetSummonItem(string type) {
         foreach(SummonItem itm in mSummonItems) {
@@ -57,14 +70,8 @@ public class LevelInfo : MonoBehaviour {
             Data fileData = fastJSON.JSON.Instance.ToObject<Data>(file.text);
 
             mSummonItems = fileData.summons;
-        }
-    }
 
-    void OnDrawGizmos() {
-        if(bounds.width > 0 && bounds.height > 0) {
-            Gizmos.color = Color.cyan;
-
-            Gizmos.DrawWireCube(new Vector3(bounds.x, bounds.y, 0.0f), new Vector3(bounds.width * 0.5f, bounds.height * 0.5f, 1.0f));
+            mTileMap = GetComponentInChildren<tk2dTileMap>();
         }
     }
 }

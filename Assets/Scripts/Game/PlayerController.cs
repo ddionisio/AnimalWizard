@@ -165,9 +165,9 @@ public class PlayerController : MonoBehaviour {
     }
 
     // Update is called once per frame
-    void FixedUpdate() {
+    void Update() {
         Vector3 pos = transform.position;
-        float dt = Time.fixedDeltaTime;
+        float dt = Time.smoothDeltaTime;
 
         InputManager input = Main.instance.input;
 
