@@ -6,7 +6,7 @@ using UnityEngine;
 using HutongGames.PlayMaker;
 
 [ActionCategory(ActionCategory.Material)]
-[Tooltip("Get a material at index on a gameObject and store it in a variable")]
+[HutongGames.PlayMaker.Tooltip("Get a material at index on a gameObject and store it in a variable")]
 public class GetMaterial : FsmStateAction
 {
 	[RequiredField]
@@ -16,7 +16,7 @@ public class GetMaterial : FsmStateAction
 	[RequiredField]
 	[UIHint(UIHint.Variable)]
 	public FsmMaterial material;
-	[Tooltip("Get the shared material of this object. NOTE: Modifying the shared material will change the appearance of all objects using this material, and change material settings that are stored in the project too.")]
+	[HutongGames.PlayMaker.Tooltip("Get the shared material of this object. NOTE: Modifying the shared material will change the appearance of all objects using this material, and change material settings that are stored in the project too.")]
 	public bool getSharedMaterial;
 
 	public override void Reset()
@@ -41,7 +41,7 @@ public class GetMaterial : FsmStateAction
 			return;
 		}
 
-		if (go.renderer == null)
+		if (go.GetComponent<Renderer>() == null)
 		{
 			LogError("Missing Renderer!");
 			return;
@@ -49,26 +49,26 @@ public class GetMaterial : FsmStateAction
 		
 		if (materialIndex.Value == 0 && !getSharedMaterial)
 		{
-			material.Value = go.renderer.material;
+			material.Value = go.GetComponent<Renderer>().material;
 		}
 		
 		else if(materialIndex.Value == 0 && getSharedMaterial)
 		{
-			material.Value = go.renderer.sharedMaterial;
+			material.Value = go.GetComponent<Renderer>().sharedMaterial;
 		}
 	
-		else if (go.renderer.materials.Length > materialIndex.Value && !getSharedMaterial)
+		else if (go.GetComponent<Renderer>().materials.Length > materialIndex.Value && !getSharedMaterial)
 		{
-			var materials = go.renderer.materials;
+			var materials = go.GetComponent<Renderer>().materials;
 			material.Value = materials[materialIndex.Value];
-			go.renderer.materials = materials;
+			go.GetComponent<Renderer>().materials = materials;
 		}
 
-		else if (go.renderer.materials.Length > materialIndex.Value && getSharedMaterial)
+		else if (go.GetComponent<Renderer>().materials.Length > materialIndex.Value && getSharedMaterial)
 		{
-			var materials = go.renderer.sharedMaterials;
+			var materials = go.GetComponent<Renderer>().sharedMaterials;
 			material.Value = materials[materialIndex.Value];
-			go.renderer.sharedMaterials = materials;
+			go.GetComponent<Renderer>().sharedMaterials = materials;
 		}
 	}
 }

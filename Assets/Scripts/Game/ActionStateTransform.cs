@@ -17,28 +17,28 @@ public class ActionStateTransform : MonoBehaviour, IActionStateListener {
             mRotation = mTrans.rotation;
             mScale = mTrans.localScale;
 
-            if(mTrans.rigidbody != null && !mTrans.rigidbody.isKinematic) {
-                mVelocity = mTrans.rigidbody.velocity; //for rigidbody
-                mAngleVelocity = mTrans.rigidbody.angularVelocity; //for rigidbody
+            if(mTrans.GetComponent<Rigidbody>() != null && !mTrans.GetComponent<Rigidbody>().isKinematic) {
+                mVelocity = mTrans.GetComponent<Rigidbody>().velocity; //for rigidbody
+                mAngleVelocity = mTrans.GetComponent<Rigidbody>().angularVelocity; //for rigidbody
             }
         }
 
         public void Restore() {
             if(mTrans != null) {
-                bool applyRigidBody = mTrans.rigidbody != null && !mTrans.rigidbody.isKinematic;
+                bool applyRigidBody = mTrans.GetComponent<Rigidbody>() != null && !mTrans.GetComponent<Rigidbody>().isKinematic;
 
                 if(applyRigidBody)
-                    mTrans.rigidbody.isKinematic = true;
+                    mTrans.GetComponent<Rigidbody>().isKinematic = true;
 
                 mTrans.position = mPosition;
                 mTrans.rotation = mRotation;
                 mTrans.localScale = mScale;
 
                 if(applyRigidBody) {
-                    mTrans.rigidbody.isKinematic = false;
+                    mTrans.GetComponent<Rigidbody>().isKinematic = false;
 
-                    mTrans.rigidbody.velocity = mVelocity; //for rigidbody
-                    mTrans.rigidbody.angularVelocity = mAngleVelocity; //for rigidbody
+                    mTrans.GetComponent<Rigidbody>().velocity = mVelocity; //for rigidbody
+                    mTrans.GetComponent<Rigidbody>().angularVelocity = mAngleVelocity; //for rigidbody
                 }
             }
         }

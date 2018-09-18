@@ -65,9 +65,9 @@ public class RhinoController : PlayerCollisionBase, IActionStateListener {
         }
 
         if(doOpposite) {
-            Vector3 vel = rigidbody.velocity;
+            Vector3 vel = GetComponent<Rigidbody>().velocity;
             vel.x = 0.0f;
-            rigidbody.velocity = vel;
+            GetComponent<Rigidbody>().velocity = vel;
             mXDir *= -1.0f;
             mForce.force = new Vector3(mXDir * moveForce, upForce, 0.0f);
         }
@@ -77,9 +77,9 @@ public class RhinoController : PlayerCollisionBase, IActionStateListener {
         mCollisionCount -= col.contacts.Length;
 
         if(mCollisionCount <= 0) {
-            Vector3 vel = rigidbody.velocity;
+            Vector3 vel = GetComponent<Rigidbody>().velocity;
             vel.y = 0.0f;
-            rigidbody.velocity = vel;
+            GetComponent<Rigidbody>().velocity = vel;
 
             mCollisionCount = 0;
             mForce.force = Vector3.zero;
@@ -88,7 +88,7 @@ public class RhinoController : PlayerCollisionBase, IActionStateListener {
 
     public override void PlayerCollide(PlayerController pc, CollisionFlags flags, ControllerColliderHit hit) {
         if((flags & CollisionFlags.Sides) != CollisionFlags.None) {
-            rigidbody.velocity = Vector3.zero;
+            GetComponent<Rigidbody>().velocity = Vector3.zero;
             mXDir = Mathf.Sign(transform.position.x - pc.transform.position.x);
             mForce.force = new Vector3(mXDir * moveForce, upForce, 0.0f);
         }

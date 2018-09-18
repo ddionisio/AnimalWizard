@@ -12,7 +12,7 @@ public class PlayerCollisionCheck : MonoBehaviour {
     void Start() {
         mController = transform.parent.GetComponent<PlayerController>();
 
-        CapsuleCollider col = collider as CapsuleCollider;
+        CapsuleCollider col = GetComponent<Collider>() as CapsuleCollider;
         col.height = mController.charCtrl.height + heightOfs;
         col.radius = mController.charCtrl.radius + radiusOfs;
         col.center = mController.charCtrl.center;
@@ -34,7 +34,7 @@ public class PlayerCollisionCheck : MonoBehaviour {
             if((mController.lastHit == null || mController.lastHit.collider != contact.otherCollider) && !mCols.Contains(contact.otherCollider)) {
                 //mCols.Add(contact.otherCollider);
 
-                Rigidbody hitbody = contact.otherCollider.rigidbody;
+                Rigidbody hitbody = contact.otherCollider.GetComponent<Rigidbody>();
 
                 PlayerCollisionBase collideInteract = contact.otherCollider.GetComponent<PlayerCollisionBase>();
                 if(collideInteract != null) {
@@ -64,7 +64,7 @@ public class PlayerCollisionCheck : MonoBehaviour {
     }
 
     void FixedUpdate() {
-        rigidbody.MovePosition(mController.transform.position);
+        GetComponent<Rigidbody>().MovePosition(mController.transform.position);
     }
 
     void LateUpdate() {

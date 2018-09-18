@@ -54,8 +54,7 @@ static public class NGUITools
 	{
 		get
 		{
-			return Application.platform != RuntimePlatform.WindowsWebPlayer &&
-				Application.platform != RuntimePlatform.OSXWebPlayer;
+			return Application.platform != RuntimePlatform.WebGLPlayer;
 		}
 	}
 
@@ -95,7 +94,7 @@ static public class NGUITools
 
 			if (mListener != null && mListener.enabled && NGUITools.GetActive(mListener.gameObject))
 			{
-				AudioSource source = mListener.audio;
+				AudioSource source = mListener.GetComponent<AudioSource>();
 				if (source == null) source = mListener.gameObject.AddComponent<AudioSource>();
 				source.pitch = pitch;
 				source.PlayOneShot(clip, volume);
@@ -729,7 +728,7 @@ static public class NGUITools
 
 	static public bool Save (string fileName, byte[] bytes)
 	{
-#if UNITY_WEBPLAYER || UNITY_FLASH || UNITY_METRO
+#if UNITY_WEBGL || UNITY_FLASH || UNITY_METRO
 		return false;
 #else
 		if (!NGUITools.fileAccess) return false;
@@ -766,10 +765,10 @@ static public class NGUITools
 
 	static public byte[] Load (string fileName)
 	{
-#if UNITY_WEBPLAYER || UNITY_FLASH || UNITY_METRO
+#if UNITY_WEBGL || UNITY_FLASH || UNITY_METRO
 		return null;
 #else
-		if (!NGUITools.fileAccess) return null;
+        if(!NGUITools.fileAccess) return null;
 
 		string path = Application.persistentDataPath + "/" + fileName;
 
@@ -807,12 +806,12 @@ static public class NGUITools
 			widgets[i].ParentHasChanged();
 	}
 
-	/// <summary>
-	/// Clipboard access via reflection.
-	/// http://answers.unity3d.com/questions/266244/how-can-i-add-copypaste-clipboard-support-to-my-ga.html
-	/// </summary>
+    /// <summary>
+    /// Clipboard access via reflection.
+    /// http://answers.unity3d.com/questions/266244/how-can-i-add-copypaste-clipboard-support-to-my-ga.html
+    /// </summary>
 
-#if UNITY_WEBPLAYER || UNITY_FLASH || UNITY_METRO
+#if UNITY_WEBGL || UNITY_FLASH || UNITY_METRO
 	/// <summary>
 	/// Access to the clipboard is not supported on this platform.
 	/// </summary>
@@ -823,7 +822,7 @@ static public class NGUITools
 		set { }
 	}
 #else
-	static PropertyInfo mSystemCopyBuffer = null;
+    static PropertyInfo mSystemCopyBuffer = null;
 	static PropertyInfo GetSystemCopyBufferProperty ()
 	{
 		if (mSystemCopyBuffer == null)

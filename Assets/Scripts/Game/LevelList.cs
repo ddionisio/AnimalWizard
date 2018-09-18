@@ -1,6 +1,7 @@
 using UnityEngine;
 using System.Collections;
 using System.Collections.Generic;
+using SimpleJSON;
 
 public class LevelList : MonoBehaviour {
     public const string sceneEnding = "end";
@@ -107,9 +108,32 @@ public class LevelList : MonoBehaviour {
     void Awake() {
         if(mInstance == null) {
             mInstance = this;
+            
+            mData = new Data();
 
-            fastJSON.JSON.Instance.Parameters.UseExtensions = false;
-            mData = fastJSON.JSON.Instance.ToObject<Data>(file.text);
+            var json = JSON.Parse(file.text);
+
+            string lockedString = json["lockedString"].Value;
+            string unlockStringFormat = json["unlockStringFormat"].Value;
+            string completeStringFormat = json["completeStringFormat"].Value;
+
+            Item[] items;
+            if(json["items"] != null) {
+                var itemsNode = json["items"].AsArray;
+                items = new Item[itemsNode.Count];
+                for(int i = 0; i < itemsNode.Count; i++) {
+                    string title = itemsNode[i]["title"].Value;
+                    string cutscene = itemsNode[i]["cutscene"].Value;
+                    items[i] = new Item() { title=title, cutscene=cutscene };
+                }
+            }
+            else
+                items = new Item[0];
+
+            mData.lockedString = lockedString;
+            mData.unlockStringFormat = unlockStringFormat;
+            mData.completeStringFormat = completeStringFormat;
+            mData.items = items;
         }
     }
 }

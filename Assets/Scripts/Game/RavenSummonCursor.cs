@@ -45,7 +45,7 @@ public class RavenSummonCursor : AnimalSummonCursor {
     }
 
     protected override void OnDisable() {
-        line.renderer.material.SetColor("modColor", mLineDefaultColor);
+        line.GetComponent<Renderer>().material.SetColor("modColor", mLineDefaultColor);
         arrow.color = mArrowDefaultColor;
 
         base.OnDisable();
@@ -65,7 +65,7 @@ public class RavenSummonCursor : AnimalSummonCursor {
         GameObject playerGO = GameObject.FindGameObjectWithTag("Player");
         mPlayer = playerGO.GetComponent<Player>();
 
-        mLineDefaultColor = line.renderer.material.GetColor("modColor");
+        mLineDefaultColor = line.GetComponent<Renderer>().material.GetColor("modColor");
         mArrowDefaultColor = arrow.color;
 
         //assume local.y is 0 and x > 0, also sprite facing right
@@ -131,13 +131,13 @@ public class RavenSummonCursor : AnimalSummonCursor {
         if(valid) {
             sprite.color = defaultColor;
             arrow.color = mArrowDefaultColor;
-            line.renderer.material.SetColor("modColor", mLineDefaultColor);
+            line.GetComponent<Renderer>().material.SetColor("modColor", mLineDefaultColor);
 
         }
         else {
             sprite.color = invalidColor;
             arrow.color = invalidColor;
-            line.renderer.material.SetColor("modColor", invalidColor);
+            line.GetComponent<Renderer>().material.SetColor("modColor", invalidColor);
         }
     }
 }

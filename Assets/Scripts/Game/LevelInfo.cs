@@ -1,6 +1,7 @@
 using UnityEngine;
 using System.Collections;
 using System.Collections.Generic;
+using SimpleJSON;
 
 public class LevelInfo : MonoBehaviour {
     [System.Serializable]
@@ -66,8 +67,21 @@ public class LevelInfo : MonoBehaviour {
         if(mInstance == null) {
             mInstance = this;
 
-            fastJSON.JSON.Instance.Parameters.UseExtensions = false;
-            Data fileData = fastJSON.JSON.Instance.ToObject<Data>(file.text);
+            Data fileData = new Data();
+
+            var jsonNode = JSON.Parse(file.text);
+
+            if(jsonNode["summons"] != null) {
+                var summonsNode = jsonNode["summons"].AsArray;
+                fileData.summons = new SummonItem[summonsNode.Count];
+                for(int i = 0; i < summonsNode.Count; i++) {
+                    string type = summonsNode[i]["type"].Value;
+                    int max = summonsNode[i]["max"].AsInt;
+                    fileData.summons[i] = new SummonItem() { type = type, max = max };
+                }
+            }
+            else
+                fileData.summons = new SummonItem[0];
 
             mSummonItems = fileData.summons;
 

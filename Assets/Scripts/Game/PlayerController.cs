@@ -155,7 +155,7 @@ public class PlayerController : MonoBehaviour {
         mPlayer.setStateCallback += OnPlayerSetState;
         mPlayer.restoreStateCallback += OnPlayerRestoreState;
 
-        mCharCtrl = collider as CharacterController;
+        mCharCtrl = GetComponent<Collider>() as CharacterController;
     }
 
     // Use this for initialization
@@ -165,7 +165,7 @@ public class PlayerController : MonoBehaviour {
     }
 
     // Update is called once per frame
-    void Update() {
+    void FixedUpdate() {
         Vector3 pos = transform.position;
         float dt = Time.smoothDeltaTime;
 
@@ -177,7 +177,7 @@ public class PlayerController : MonoBehaviour {
 
             if(mInputAxis.y < 0.0f && isGrounded && mLastHit != null && ((1 << mLastHit.gameObject.layer) & dropPlatformMask) != 0) {
                 if(Time.fixedTime - mLastInputYDownTime >= dropPlatformDelay) {
-                    pos.y -= mCharCtrl.stepOffset;
+                    pos.y -= mCharCtrl.height + mCharCtrl.stepOffset;
                     mCharCtrl.detectCollisions = false;
                     transform.position = pos;
 
@@ -389,7 +389,7 @@ public class PlayerController : MonoBehaviour {
     void OnControllerColliderHit(ControllerColliderHit hit) {
         mLastHit = hit;
 
-        Rigidbody hitbody = hit.collider.rigidbody;
+        Rigidbody hitbody = hit.collider.GetComponent<Rigidbody>();
         GameObject hitGO = hit.gameObject;
 
         if(((1 << hitGO.layer) & deathLayerMask) != 0) {

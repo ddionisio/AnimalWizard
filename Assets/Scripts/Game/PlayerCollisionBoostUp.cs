@@ -6,7 +6,7 @@ public class PlayerCollisionBoostUp : PlayerCollisionBase {
     public float boost = 10;
 
     public override void PlayerCollide(PlayerController pc, CollisionFlags flags, ControllerColliderHit hit) {
-        Vector3 vel = rigidbody.GetPointVelocity(hit.point);
+        Vector3 vel = GetComponent<Rigidbody>().GetPointVelocity(hit.point);
 
         if(vel.y > tolerance && (flags & CollisionFlags.Below) != 0) {
             //Vector2 playerVel = pc.curVel;

@@ -61,6 +61,6 @@ public class AnimalSummonCursor : MonoBehaviour {
     protected virtual void FixedUpdate() {
         //update rigidbody to attach
         if(mAttach != null)
-            rigidbody.MovePosition(mAttach.position);
+            GetComponent<Rigidbody>().MovePosition(mAttach.position);
     }
 }

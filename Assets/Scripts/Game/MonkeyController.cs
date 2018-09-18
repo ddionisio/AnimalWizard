@@ -28,7 +28,7 @@ public class MonkeyController : MonoBehaviour {
         ctailEndPos.z = tailEnd.transform.localPosition.z;
         tailEnd.transform.localPosition = ctailEndPos;
 
-        BoxCollider boxColl = collider as BoxCollider;
+        BoxCollider boxColl = GetComponent<Collider>() as BoxCollider;
         boxColl.center = cursor.collideBounds.center;
         boxColl.size = cursor.collideBounds.size;
     }

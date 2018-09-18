@@ -54,9 +54,9 @@ public class Animal : EntityBase, IActionStateListener {
     }
 
     protected override void OnDespawned() {
-        if(rigidbody != null && !rigidbody.isKinematic) {
-            rigidbody.velocity = Vector3.zero;
-            rigidbody.angularVelocity = Vector3.zero;
+        if(GetComponent<Rigidbody>() != null && !GetComponent<Rigidbody>().isKinematic) {
+            GetComponent<Rigidbody>().velocity = Vector3.zero;
+            GetComponent<Rigidbody>().angularVelocity = Vector3.zero;
         }
 
         if(ActionStateManager.instance != null) {
