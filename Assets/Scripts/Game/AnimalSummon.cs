@@ -65,7 +65,7 @@ public class AnimalSummon : MonoBehaviour {
 
         //this will summon the currently selected type
         if(!string.IsNullOrEmpty(mCurType)) {
-            Transform spawned = mPool.Spawn(mCurType, null, null, position);
+            Transform spawned = mPool.Spawn(mCurType, null, null, position, Quaternion.identity);
             animal = spawned.GetComponent<Animal>();
             animal.SummonInit(player);
         }

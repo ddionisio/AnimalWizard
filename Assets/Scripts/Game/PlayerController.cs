@@ -194,7 +194,7 @@ public class PlayerController : MonoBehaviour {
                 if(Time.fixedTime - mLastInputYUpTime >= interactDelay) {
                     //interact
                     if(mInteractFSM != null) {
-                        mInteractFSM.SendEvent(EntityEvent.TriggerAct);
+                        mInteractFSM.SendEvent(EntityEvent.Interact);
                     }
 
                     mLastInputYUpTime = Time.fixedTime;
